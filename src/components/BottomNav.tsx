@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { MenuButton } from './MenuButton'
 
 const tabs = [
   { href: '/', label: 'Hjem', icon: '🏠' },
@@ -32,6 +33,10 @@ export function BottomNav() {
             </Link>
           )
         })}
+        <div className="flex flex-col items-center justify-center w-full h-full text-xs text-gray-500">
+          <MenuButton />
+          <span>Menu</span>
+        </div>
       </div>
     </nav>
   )
