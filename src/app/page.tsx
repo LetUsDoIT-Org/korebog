@@ -50,11 +50,14 @@ export default function HomePage() {
     }
   }
 
-  async function updateOdometer(vehicleId: string | null, km: number, date: string) {
-    if (!vehicleId) return
+  async function updateOdometerIfHigher(vehicleId: string | null, odometerEndKm: number | null) {
+    if (!vehicleId || !odometerEndKm || odometerEndKm <= 0) return
     const latest = await getLatestReading(vehicleId)
-    const newKm = Math.round((latest?.reading_km ?? 0) + km)
-    await saveReading(vehicleId, newKm, date, 'Auto-opdateret fra tur')
+    // Only save if higher than current latest — avoids inflating km for backdated trips
+    if (!latest || odometerEndKm > latest.reading_km) {
+      const today = new Date().toISOString().split('T')[0]
+      await saveReading(vehicleId, Math.round(odometerEndKm), today, 'Auto-opdateret fra tur')
+    }
   }
 
   function showToast(message: string, type: 'success' | 'error' = 'success') {
@@ -66,6 +69,18 @@ export default function HomePage() {
     try {
       const vehicle = await getDefaultVehicle()
       const today = new Date().toISOString().split('T')[0]
+
+      // Compute odometer for favorite trips from current reading
+      let odometerStartKm: number | null = null
+      let odometerEndKm: number | null = null
+      if (vehicle) {
+        const latest = await getLatestReading(vehicle.id)
+        if (latest) {
+          odometerStartKm = latest.reading_km
+          odometerEndKm = Math.round(latest.reading_km + fav.distance_km)
+        }
+      }
+
       await saveTripOfflineAware({
         vehicle_id: vehicle?.id ?? null,
         customer_id: fav.customer_id ?? null,
@@ -77,10 +92,10 @@ export default function HomePage() {
         is_business: true,
         transport_type: 'car',
         gps_track: null,
-        odometer_start_km: null,
-        odometer_end_km: null,
+        odometer_start_km: odometerStartKm,
+        odometer_end_km: odometerEndKm,
       })
-      await updateOdometer(vehicle?.id ?? null, fav.distance_km, today)
+      await updateOdometerIfHigher(vehicle?.id ?? null, odometerEndKm)
       await loadData()
       showToast(`${fav.label} — ${fav.distance_km} km registreret`)
     } catch (err) {
@@ -134,7 +149,7 @@ export default function HomePage() {
         vehicle_id: vehicle?.id ?? null,
         gps_track: null,
       })
-      await updateOdometer(vehicle?.id ?? null, data.distance_km, data.date)
+      await updateOdometerIfHigher(vehicle?.id ?? null, data.odometer_end_km)
 
       if (saveAsFavorite) {
         try {

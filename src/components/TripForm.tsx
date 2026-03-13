@@ -42,9 +42,12 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
   const [saveAsFav, setSaveAsFav] = useState(false)
   const [favLabel, setFavLabel] = useState('')
   const [showOptions, setShowOptions] = useState(false)
-  const [odometerStart, setOdometerStart] = useState<number>(
-    initial?.odometer_start_km ?? currentOdometerKm ?? 0
+  const initialOdometer = initial?.odometer_start_km ?? currentOdometerKm ?? 0
+  const [odometerStart, setOdometerStart] = useState<string>(
+    initialOdometer > 0 ? String(initialOdometer) : ''
   )
+  const odometerStartNum = parseFloat(odometerStart) || 0
+  const showOdometer = initialOdometer > 0 || odometerStart !== ''
 
   const totalKm = returnTrip ? distanceKm * 2 : distanceKm
 
@@ -89,7 +92,7 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const odometerEnd = odometerStart > 0 ? Math.round(odometerStart + totalKm) : null
+    const odometerEnd = odometerStartNum > 0 ? Math.round(odometerStartNum + totalKm) : null
     onSave({
       date,
       purpose,
@@ -99,7 +102,7 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
       is_business: isBusiness,
       transport_type: transportType,
       customer_id: customerId,
-      odometer_start_km: odometerStart > 0 ? odometerStart : null,
+      odometer_start_km: odometerStartNum > 0 ? odometerStartNum : null,
       odometer_end_km: odometerEnd,
     }, saveAsFav, favLabel || purpose)
   }
@@ -178,7 +181,7 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
       </div>
 
       {/* Odometer readings */}
-      {odometerStart > 0 && (
+      {showOdometer && (
         <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 space-y-2">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Kilometertæller</p>
           <div className="flex items-center gap-3">
@@ -186,8 +189,9 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
               <label className="text-xs text-gray-400">Start km</label>
               <input
                 type="number"
-                value={odometerStart || ''}
-                onChange={(e) => setOdometerStart(parseFloat(e.target.value) || 0)}
+                value={odometerStart}
+                onChange={(e) => setOdometerStart(e.target.value)}
+                placeholder="0"
                 className="w-full rounded-lg border p-2 text-center text-lg dark:bg-gray-700 dark:border-gray-600"
               />
             </div>
@@ -196,15 +200,15 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
               <label className="text-xs text-gray-400">Slut km</label>
               <input
                 type="number"
-                value={totalKm > 0 ? Math.round(odometerStart + totalKm) : ''}
+                value={odometerStartNum > 0 && totalKm > 0 ? Math.round(odometerStartNum + totalKm) : ''}
                 onChange={(e) => {
                   const endKm = parseFloat(e.target.value) || 0
-                  // If user edits end km, recalculate distance
-                  const newDistance = endKm - odometerStart
+                  const newDistance = endKm - odometerStartNum
                   if (newDistance > 0) {
                     setDistanceKm(returnTrip ? newDistance / 2 : newDistance)
                   }
                 }}
+                placeholder="0"
                 className="w-full rounded-lg border p-2 text-center text-lg dark:bg-gray-700 dark:border-gray-600"
               />
             </div>

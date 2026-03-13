@@ -83,46 +83,56 @@ export function TripsList({ trips, customers = [], currentOdometerKm, onDelete, 
           )
         }
 
+        const customerName = trip.customer_id
+          ? customers.find((c) => c.id === trip.customer_id)?.name
+          : null
+
         return (
           <div
             key={trip.id}
-            className="flex items-center justify-between rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-3"
+            className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-3"
           >
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">{dateStr}</span>
-                {!trip.is_business && (
-                  <span className="text-xs bg-gray-200 dark:bg-gray-700 rounded px-1">Privat</span>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">{dateStr}</span>
+                  <span className="font-medium">{trip.purpose}</span>
+                  {!trip.is_business && (
+                    <span className="text-xs bg-gray-200 dark:bg-gray-700 rounded px-1">Privat</span>
+                  )}
+                  {trip.transport_type === 'public_transport' && (
+                    <span className="text-xs bg-yellow-200 dark:bg-yellow-800 rounded px-1">Offentlig</span>
+                  )}
+                </div>
+                {customerName && (
+                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-0.5">{customerName}</p>
                 )}
-                {trip.transport_type === 'public_transport' && (
-                  <span className="text-xs bg-yellow-200 dark:bg-yellow-800 rounded px-1">Offentlig</span>
+                <p className="text-sm text-gray-500 mt-0.5">Fra: {trip.start_address}</p>
+                <p className="text-sm text-gray-500">Til: {trip.end_address}</p>
+                {(trip.odometer_start_km != null || trip.odometer_end_km != null) && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
+                    Km-tæller: {trip.odometer_start_km?.toLocaleString('da-DK') ?? '–'} → {trip.odometer_end_km?.toLocaleString('da-DK') ?? '–'}
+                  </p>
                 )}
               </div>
-              <p className="font-medium">{trip.purpose}</p>
-              <p className="text-sm text-gray-500">{trip.start_address} → {trip.end_address}</p>
-              {(trip.odometer_start_km != null || trip.odometer_end_km != null) && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
-                  Km-tæller: {trip.odometer_start_km?.toLocaleString('da-DK') ?? '–'} → {trip.odometer_end_km?.toLocaleString('da-DK') ?? '–'}
-                </p>
-              )}
-            </div>
-            <div className="text-right ml-3 shrink-0">
-              <p className="font-mono font-semibold">{trip.distance_km} km</p>
-              <div className="flex gap-2 mt-1 justify-end">
-                {onUpdate && (
+              <div className="text-right shrink-0">
+                <p className="font-mono font-semibold">{trip.distance_km} km</p>
+                <div className="flex gap-2 mt-1 justify-end">
+                  {onUpdate && (
+                    <button
+                      onClick={() => setEditingId(trip.id)}
+                      className="text-xs text-blue-500 hover:text-blue-700"
+                    >
+                      Rediger
+                    </button>
+                  )}
                   <button
-                    onClick={() => setEditingId(trip.id)}
-                    className="text-xs text-blue-500 hover:text-blue-700"
+                    onClick={() => onDelete(trip.id)}
+                    className="text-xs text-red-500 hover:text-red-700"
                   >
-                    Rediger
+                    Slet
                   </button>
-                )}
-                <button
-                  onClick={() => onDelete(trip.id)}
-                  className="text-xs text-red-500 hover:text-red-700"
-                >
-                  Slet
-                </button>
+                </div>
               </div>
             </div>
           </div>
