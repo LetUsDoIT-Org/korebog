@@ -26,7 +26,7 @@ const steps: Step[] = [
   {
     key: 'profileComplete',
     title: 'Udfyld din profil',
-    description: 'Tilføj navn, adresse og CPR/medarbejdernr under Indstillinger.',
+    description: 'Tilføj navn, adresse og medarbejdernr under Indstillinger.',
     href: '/settings',
     required: true,
   },

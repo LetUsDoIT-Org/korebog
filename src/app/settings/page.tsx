@@ -13,7 +13,6 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState('')
   const [address, setAddress] = useState('')
   const [identifier, setIdentifier] = useState('')
-  const [identifierType, setIdentifierType] = useState<'cpr' | 'employee_number'>('cpr')
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -32,7 +31,6 @@ export default function SettingsPage() {
         setFullName(p.full_name)
         setAddress(p.address)
         setIdentifier(p.identifier)
-        setIdentifierType(p.identifier_type as 'cpr' | 'employee_number')
       }
     })
     loadCustomers()
@@ -51,7 +49,7 @@ export default function SettingsPage() {
         full_name: fullName,
         address,
         identifier,
-        identifier_type: identifierType,
+        identifier_type: 'employee_number',
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -111,17 +109,7 @@ export default function SettingsPage() {
           onChange={(a) => setAddress(a)}
         />
 
-        <div className="flex gap-3">
-          <button type="button" onClick={() => setIdentifierType('cpr')}
-            className={`flex-1 rounded-lg p-2 text-center ${identifierType === 'cpr' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
-            CPR-nr
-          </button>
-          <button type="button" onClick={() => setIdentifierType('employee_number')}
-            className={`flex-1 rounded-lg p-2 text-center ${identifierType === 'employee_number' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
-            Medarbejdernr
-          </button>
-        </div>
-        <input type="text" placeholder={identifierType === 'cpr' ? 'CPR-nummer' : 'Medarbejdernummer'}
+        <input type="text" placeholder="Medarbejdernummer"
           value={identifier} onChange={(e) => setIdentifier(e.target.value)}
           className="w-full rounded-lg border p-3 dark:bg-gray-800 dark:border-gray-700" />
 
