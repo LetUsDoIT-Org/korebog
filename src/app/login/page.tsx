@@ -31,6 +31,7 @@ export default function LoginPage() {
       } else if (data.session) {
         // Auto-confirmed (e.g. local dev or email confirmation disabled)
         router.push('/')
+        router.refresh()
       } else {
         // Email confirmation required
         setError('')
@@ -43,6 +44,7 @@ export default function LoginPage() {
         setError(error.message)
       } else {
         router.push('/')
+        router.refresh()
       }
     }
     setLoading(false)

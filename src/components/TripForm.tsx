@@ -187,30 +187,36 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <label className="text-xs text-gray-400">Start km</label>
-              <input
-                type="number"
-                value={odometerStart}
-                onChange={(e) => setOdometerStart(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-lg border p-2 text-center text-lg dark:bg-gray-700 dark:border-gray-600"
-              />
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setOdometerStart(String(Math.max(0, odometerStartNum - 20)))}
+                  className="shrink-0 w-9 h-10 rounded-lg bg-gray-200 dark:bg-gray-600 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-500"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  value={odometerStart}
+                  onChange={(e) => setOdometerStart(e.target.value)}
+                  placeholder="0"
+                  className="w-full rounded-lg border p-2 text-center text-lg dark:bg-gray-700 dark:border-gray-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setOdometerStart(String(odometerStartNum + 20))}
+                  className="shrink-0 w-9 h-10 rounded-lg bg-gray-200 dark:bg-gray-600 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-500"
+                >
+                  +
+                </button>
+              </div>
             </div>
             <span className="text-gray-400 mt-4">→</span>
             <div className="flex-1">
               <label className="text-xs text-gray-400">Slut km</label>
-              <input
-                type="number"
-                value={odometerStartNum > 0 && totalKm > 0 ? Math.round(odometerStartNum + totalKm) : ''}
-                onChange={(e) => {
-                  const endKm = parseFloat(e.target.value) || 0
-                  const newDistance = endKm - odometerStartNum
-                  if (newDistance > 0) {
-                    setDistanceKm(returnTrip ? newDistance / 2 : newDistance)
-                  }
-                }}
-                placeholder="0"
-                className="w-full rounded-lg border p-2 text-center text-lg dark:bg-gray-700 dark:border-gray-600"
-              />
+              <div className="rounded-lg border bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2 text-center text-lg font-semibold text-gray-700 dark:text-gray-300">
+                {odometerStartNum > 0 && totalKm > 0 ? Math.round(odometerStartNum + totalKm).toLocaleString('da-DK') : '—'}
+              </div>
             </div>
           </div>
         </div>
