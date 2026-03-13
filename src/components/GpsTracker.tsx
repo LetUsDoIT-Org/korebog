@@ -23,7 +23,7 @@ export function GpsTracker({ onComplete, onCancel }: Props) {
       <div className="text-center space-y-4">
         <p className="text-gray-500">Tryk start for at begynde GPS-sporing</p>
         <button
-          onClick={start}
+          onClick={() => { localStorage.setItem('korebog_has_used_gps', 'true'); start() }}
           className="w-full rounded-lg bg-purple-600 p-4 text-white font-semibold text-xl hover:bg-purple-700"
         >
           Start GPS

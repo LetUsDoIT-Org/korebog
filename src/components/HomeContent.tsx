@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import type { FavoriteTrip, Customer } from '@/types/database'
 import { FavoriteTripCard } from './FavoriteTripCard'
 import { TripForm } from './TripForm'
+import { OnboardingChecklist, type OnboardingStatus } from './OnboardingChecklist'
 
 type TripData = {
   date: string
@@ -24,13 +25,14 @@ type Props = {
   monthStats: { totalKm: number; tripCount: number }
   defaultStartAddress: string
   currentOdometerKm: number | null
+  onboardingStatus: OnboardingStatus
   onFavoriteTap: (fav: FavoriteTrip) => void
   onFavoriteDelete: (id: string) => void
   onFavoriteUpdate: (id: string, updates: Partial<FavoriteTrip>) => void
   onTripSave: (data: TripData, saveAsFavorite: boolean, favoriteLabel: string) => Promise<void>
 }
 
-export function HomeContent({ favorites, customers, monthStats, defaultStartAddress, currentOdometerKm, onFavoriteTap, onFavoriteDelete, onFavoriteUpdate, onTripSave }: Props) {
+export function HomeContent({ favorites, customers, monthStats, defaultStartAddress, currentOdometerKm, onboardingStatus, onFavoriteTap, onFavoriteDelete, onFavoriteUpdate, onTripSave }: Props) {
   const [showNewTrip, setShowNewTrip] = useState(false)
   const [monthName, setMonthName] = useState('')
 
@@ -40,6 +42,9 @@ export function HomeContent({ favorites, customers, monthStats, defaultStartAddr
 
   return (
     <div className="p-4 max-w-lg mx-auto space-y-6">
+      {/* Onboarding checklist */}
+      <OnboardingChecklist status={onboardingStatus} />
+
       {/* Month stats */}
       <div className="rounded-xl bg-blue-50 dark:bg-blue-950 p-4 text-center">
         <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">Denne måned - {monthName}</p>

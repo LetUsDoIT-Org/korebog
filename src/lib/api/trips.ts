@@ -75,3 +75,11 @@ export async function getOfflineQueueCount(): Promise<number> {
   const queue = await getQueue()
   return queue.length
 }
+
+export async function hasAnyTrips(): Promise<boolean> {
+  const supabase = createClient()
+  const { count } = await supabase
+    .from('trips')
+    .select('id', { count: 'exact', head: true })
+  return (count ?? 0) > 0
+}

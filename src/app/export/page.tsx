@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { tripsToCSV, downloadCSV, generatePDF } from '@/lib/export'
 
@@ -12,6 +12,10 @@ export default function ExportPage() {
   const [from, setFrom] = useState(firstOfMonth)
   const [to, setTo] = useState(today)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    localStorage.setItem('korebog_has_exported', 'true')
+  }, [])
 
   async function fetchExportData() {
     const supabase = createClient()

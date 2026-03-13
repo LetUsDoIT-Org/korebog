@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { HomeContent } from '@/components/HomeContent'
 import { getFavorites, saveFavorite, deleteFavorite, updateFavorite } from '@/lib/api/favorites'
-import { getTrips, saveTripOfflineAware } from '@/lib/api/trips'
+import { getTrips, saveTripOfflineAware, hasAnyTrips } from '@/lib/api/trips'
 import { getDefaultVehicle } from '@/lib/api/vehicles'
 import { getLatestReading, saveReading, estimateCurrentKm } from '@/lib/api/odometer'
 import { getProfile } from '@/lib/api/profile'
 import { getCustomers } from '@/lib/api/customers'
 import type { FavoriteTrip, Customer, Vehicle } from '@/types/database'
+import type { OnboardingStatus } from '@/components/OnboardingChecklist'
 
 export default function HomePage() {
   const [favorites, setFavorites] = useState<FavoriteTrip[]>([])
@@ -18,6 +19,10 @@ export default function HomePage() {
   const [currentOdometerKm, setCurrentOdometerKm] = useState<number | null>(null)
   const [defaultVehicle, setDefaultVehicle] = useState<Vehicle | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>({
+    profileComplete: false, vehicleAdded: false, odometerSet: false,
+    customersAdded: false, hasTrips: false, hasUsedGps: false, hasFavorites: false, hasExported: false,
+  })
 
   useEffect(() => {
     loadData()
@@ -41,13 +46,28 @@ export default function HomePage() {
       tripCount: businessTrips.length,
     })
 
-    // Load odometer
+    // Load odometer + onboarding status
+    let odometerSet = false
     if (vehicle) {
       const latest = await getLatestReading(vehicle.id)
       if (latest) {
         setCurrentOdometerKm(estimateCurrentKm(latest.reading_km, latest.date))
+        odometerSet = true
       }
     }
+
+    const anyTrips = await hasAnyTrips()
+
+    setOnboardingStatus({
+      profileComplete: !!(profile?.full_name && profile?.address && profile?.identifier),
+      vehicleAdded: vehicle !== null,
+      odometerSet,
+      customersAdded: custs.length > 0,
+      hasTrips: anyTrips,
+      hasUsedGps: localStorage.getItem('korebog_has_used_gps') === 'true',
+      hasFavorites: favs.length > 0,
+      hasExported: localStorage.getItem('korebog_has_exported') === 'true',
+    })
   }
 
   async function updateOdometerIfHigher(vehicleId: string | null, odometerEndKm: number | null) {
@@ -192,16 +212,20 @@ export default function HomePage() {
         monthStats={monthStats}
         defaultStartAddress={defaultStartAddress}
         currentOdometerKm={currentOdometerKm}
+        onboardingStatus={onboardingStatus}
         onFavoriteTap={handleFavoriteTap}
         onFavoriteDelete={handleFavoriteDelete}
         onFavoriteUpdate={handleFavoriteUpdate}
         onTripSave={handleTripSave}
       />
       {toast && (
-        <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 rounded-lg px-5 py-3 text-white font-semibold shadow-lg z-50 transition-opacity ${
-          toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
-        }`}>
-          {toast.message}
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`rounded-2xl px-8 py-5 text-white font-semibold shadow-2xl text-center max-w-xs animate-fade-in ${
+            toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+          }`}>
+            <p className="text-2xl mb-1">{toast.type === 'error' ? '⚠️' : '✅'}</p>
+            <p>{toast.message}</p>
+          </div>
         </div>
       )}
     </>

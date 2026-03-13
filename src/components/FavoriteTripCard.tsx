@@ -64,38 +64,43 @@ export function FavoriteTripCard({ favorite, onTap, onDelete, onUpdate }: Props)
 
   return (
     <div className="relative group">
-      <button
-        onClick={() => onTap(favorite)}
-        className="w-full rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800 p-4 text-left shadow-sm hover:shadow-md active:scale-95 transition-all"
-      >
+      <div className="w-full rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800 p-4 shadow-sm space-y-2">
         <div className="flex items-start justify-between gap-2">
           <p className="font-semibold text-lg flex-1 min-w-0">{favorite.label}</p>
           <div className="flex gap-1 shrink-0">
             <span
               role="button"
-              onClick={(e) => { e.stopPropagation(); setEditing(true) }}
-              className="rounded-lg bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
+              onClick={() => setEditing(true)}
+              className="rounded-lg bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
               title="Rediger"
             >
               ✏️
             </span>
             <span
               role="button"
-              onClick={(e) => { e.stopPropagation(); setConfirmDelete(true) }}
-              className="rounded-lg bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs hover:bg-red-100 dark:hover:bg-red-900"
+              onClick={() => setConfirmDelete(true)}
+              className="rounded-lg bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs hover:bg-red-100 dark:hover:bg-red-900 cursor-pointer"
               title="Slet"
             >
               🗑️
             </span>
           </div>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {favorite.start_address} → {favorite.end_address}
         </p>
-        <p className="text-sm font-mono text-blue-600 dark:text-blue-400 mt-1">
-          {favorite.distance_km} km
-        </p>
-      </button>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-mono text-blue-600 dark:text-blue-400">
+            {favorite.distance_km} km
+          </p>
+          <button
+            onClick={() => onTap(favorite)}
+            className="rounded-lg bg-green-600 px-4 py-2 text-white text-sm font-semibold hover:bg-green-700 active:scale-95 transition-all"
+          >
+            ▶ Registrer tur
+          </button>
+        </div>
+      </div>
 
       {/* Delete confirmation */}
       {confirmDelete && (

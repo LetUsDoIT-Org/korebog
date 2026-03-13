@@ -16,6 +16,10 @@ describe('HomeContent', () => {
         monthStats={{ totalKm: 0, tripCount: 0 }}
         defaultStartAddress=""
         currentOdometerKm={null}
+        onboardingStatus={{
+          profileComplete: false, vehicleAdded: false, odometerSet: false,
+          customersAdded: false, hasTrips: false, hasUsedGps: false, hasFavorites: false, hasExported: false,
+        }}
         onFavoriteTap={vi.fn()}
         onFavoriteDelete={vi.fn()}
         onFavoriteUpdate={vi.fn()}
