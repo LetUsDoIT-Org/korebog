@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Trip } from '@/types/database'
+import { addToQueue, getQueue, syncQueue } from '@/lib/offline'
 
 export async function saveTrip(trip: Omit<Trip, 'id' | 'user_id' | 'created_at'>): Promise<Trip> {
   const supabase = createClient()
@@ -48,4 +49,29 @@ export async function updateTrip(id: string, updates: Partial<Trip>): Promise<Tr
     .single()
   if (error) throw error
   return data
+}
+
+export async function saveTripOfflineAware(
+  trip: Omit<Trip, 'id' | 'user_id' | 'created_at'>
+): Promise<void> {
+  if (!navigator.onLine) {
+    await addToQueue(trip)
+    return
+  }
+  try {
+    await saveTrip(trip)
+  } catch {
+    await addToQueue(trip)
+  }
+}
+
+export async function syncOfflineTrips(): Promise<number> {
+  return syncQueue(async (trip) => {
+    await saveTrip(trip)
+  })
+}
+
+export async function getOfflineQueueCount(): Promise<number> {
+  const queue = await getQueue()
+  return queue.length
 }
