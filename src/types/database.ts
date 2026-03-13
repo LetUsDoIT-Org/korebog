@@ -53,6 +53,7 @@ export type FavoriteTrip = {
   distance_km: number
   sort_order: number
   customer_id: string | null
+  vehicle_id: string | null
   created_at: string
 }
 

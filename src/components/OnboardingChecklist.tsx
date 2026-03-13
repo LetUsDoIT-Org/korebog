@@ -33,7 +33,7 @@ const steps: Step[] = [
   {
     key: 'vehicleAdded',
     title: 'Tilføj din bil',
-    description: 'Registrer bilnavn og nummerplade under Bil-siden.',
+    description: 'Registrer dine biler med navn og nummerplade under Bil-siden. Du kan tilføje flere biler.',
     href: '/vehicle',
     required: true,
   },
@@ -67,8 +67,8 @@ const steps: Step[] = [
   },
   {
     key: 'hasFavorites',
-    title: 'Gem en favorit-tur',
-    description: 'Når du opretter en tur, kan du markere "Gem som favorit" for hurtig registrering næste gang.',
+    title: 'Gem en ofte kørt rute',
+    description: 'Når du opretter en tur, kan du markere "Gem som ofte kørt rute" for hurtig registrering næste gang.',
     href: null,
     required: false,
   },

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { FavoriteTrip, Customer } from '@/types/database'
+import type { FavoriteTrip, Customer, Vehicle } from '@/types/database'
 import { FavoriteTripCard } from './FavoriteTripCard'
 import { TripForm } from './TripForm'
 import { GpsTracker } from './GpsTracker'
@@ -16,6 +16,7 @@ type TripData = {
   is_business: boolean
   transport_type: 'car' | 'public_transport'
   customer_id: string | null
+  vehicle_id: string | null
   odometer_start_km: number | null
   odometer_end_km: number | null
 }
@@ -23,6 +24,7 @@ type TripData = {
 type Props = {
   favorites: FavoriteTrip[]
   customers: Customer[]
+  vehicles: Vehicle[]
   monthStats: { totalKm: number; tripCount: number }
   defaultStartAddress: string
   currentOdometerKm: number | null
@@ -33,7 +35,7 @@ type Props = {
   onTripSave: (data: TripData, saveAsFavorite: boolean, favoriteLabel: string) => Promise<void>
 }
 
-export function HomeContent({ favorites, customers, monthStats, defaultStartAddress, currentOdometerKm, onboardingStatus, onFavoriteTap, onFavoriteDelete, onFavoriteUpdate, onTripSave }: Props) {
+export function HomeContent({ favorites, customers, vehicles, monthStats, defaultStartAddress, currentOdometerKm, onboardingStatus, onFavoriteTap, onFavoriteDelete, onFavoriteUpdate, onTripSave }: Props) {
   const [showNewTrip, setShowNewTrip] = useState(false)
   const [showGps, setShowGps] = useState(false)
   const [gpsDistance, setGpsDistance] = useState<number | null>(null)
@@ -58,12 +60,13 @@ export function HomeContent({ favorites, customers, monthStats, defaultStartAddr
       {/* Favorite trips */}
       {favorites.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Hurtig registrering</h2>
+          <h2 className="text-lg font-semibold">Ofte kørte ruter</h2>
           <div className="grid grid-cols-1 gap-3">
             {favorites.map((fav) => (
               <FavoriteTripCard
                 key={fav.id}
                 favorite={fav}
+                vehicleLabel={vehicles.length > 1 && fav.vehicle_id ? vehicles.find((v) => v.id === fav.vehicle_id)?.registration_number : undefined}
                 onTap={onFavoriteTap}
                 onDelete={onFavoriteDelete}
                 onUpdate={onFavoriteUpdate}
@@ -121,6 +124,7 @@ export function HomeContent({ favorites, customers, monthStats, defaultStartAddr
               ...(gpsDistance !== null ? { distance_km: gpsDistance } : {}),
             }}
             customers={customers}
+            vehicles={vehicles}
             currentOdometerKm={currentOdometerKm}
             onSave={async (data, saveAsFav, favLabel) => { await onTripSave(data, saveAsFav, favLabel); setShowNewTrip(false); setGpsDistance(null) }}
           />

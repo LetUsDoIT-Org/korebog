@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Trip, Customer } from '@/types/database'
+import type { Trip, Customer, Vehicle } from '@/types/database'
 import { TripForm } from './TripForm'
 
 type TripData = {
@@ -13,6 +13,7 @@ type TripData = {
   is_business: boolean
   transport_type: 'car' | 'public_transport'
   customer_id: string | null
+  vehicle_id: string | null
   odometer_start_km: number | null
   odometer_end_km: number | null
 }
@@ -20,12 +21,13 @@ type TripData = {
 type Props = {
   trips: Trip[]
   customers?: Customer[]
+  vehicles?: Vehicle[]
   currentOdometerKm?: number | null
   onDelete: (id: string) => void
   onUpdate?: (id: string, data: TripData) => void
 }
 
-export function TripsList({ trips, customers = [], currentOdometerKm, onDelete, onUpdate }: Props) {
+export function TripsList({ trips, customers = [], vehicles = [], currentOdometerKm, onDelete, onUpdate }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   if (trips.length === 0) {
@@ -62,10 +64,13 @@ export function TripsList({ trips, customers = [], currentOdometerKm, onDelete, 
                   is_business: trip.is_business,
                   transport_type: trip.transport_type,
                   customer_id: trip.customer_id,
+                  vehicle_id: trip.vehicle_id,
                   odometer_start_km: trip.odometer_start_km,
                   odometer_end_km: trip.odometer_end_km,
                 }}
                 customers={customers}
+                vehicles={vehicles}
+                defaultVehicleId={trip.vehicle_id}
                 currentOdometerKm={currentOdometerKm}
                 onSave={(data) => {
                   onUpdate?.(trip.id, data)
@@ -86,6 +91,9 @@ export function TripsList({ trips, customers = [], currentOdometerKm, onDelete, 
         const customerName = trip.customer_id
           ? customers.find((c) => c.id === trip.customer_id)?.name
           : null
+        const vehicleReg = vehicles.length > 1 && trip.vehicle_id
+          ? vehicles.find((v) => v.id === trip.vehicle_id)?.registration_number
+          : null
 
         return (
           <div
@@ -104,8 +112,17 @@ export function TripsList({ trips, customers = [], currentOdometerKm, onDelete, 
                     <span className="text-xs bg-yellow-200 dark:bg-yellow-800 rounded px-1">Offentlig</span>
                   )}
                 </div>
-                {customerName && (
-                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-0.5">{customerName}</p>
+                {(customerName || vehicleReg) && (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {customerName && (
+                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{customerName}</p>
+                    )}
+                    {vehicleReg && (
+                      <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                        🚗 {vehicleReg}
+                      </span>
+                    )}
+                  </div>
                 )}
                 <p className="text-sm text-gray-500 mt-0.5">Fra: {trip.start_address}</p>
                 <p className="text-sm text-gray-500">Til: {trip.end_address}</p>

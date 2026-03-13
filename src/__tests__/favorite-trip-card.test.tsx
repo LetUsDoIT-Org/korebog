@@ -13,6 +13,7 @@ describe('FavoriteTripCard', () => {
     sort_order: 0,
     user_id: 'u1',
     customer_id: null,
+    vehicle_id: null,
     created_at: '',
   }
 
@@ -25,7 +26,7 @@ describe('FavoriteTripCard', () => {
   it('calls onTap when clicked', () => {
     const onTap = vi.fn()
     render(<FavoriteTripCard favorite={favorite} onTap={onTap} onDelete={vi.fn()} onUpdate={vi.fn()} />)
-    fireEvent.click(screen.getByText('Kundemøde - Acme'))
+    fireEvent.click(screen.getByText(/registrer tur/i))
     expect(onTap).toHaveBeenCalledWith(favorite)
   })
 })

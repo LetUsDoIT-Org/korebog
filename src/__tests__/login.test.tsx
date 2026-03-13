@@ -5,7 +5,16 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
       signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
+      signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
+      signUp: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
     },
+  }),
+}))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
   }),
 }))
 

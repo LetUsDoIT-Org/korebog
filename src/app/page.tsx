@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { HomeContent } from '@/components/HomeContent'
 import { getFavorites, saveFavorite, deleteFavorite, updateFavorite } from '@/lib/api/favorites'
 import { getTrips, saveTripOfflineAware, hasAnyTrips } from '@/lib/api/trips'
-import { getDefaultVehicle } from '@/lib/api/vehicles'
+import { getVehicles, getDefaultVehicle } from '@/lib/api/vehicles'
 import { getLatestReading, saveReading, estimateCurrentKm } from '@/lib/api/odometer'
 import { getProfile } from '@/lib/api/profile'
 import { getCustomers } from '@/lib/api/customers'
@@ -17,6 +17,7 @@ export default function HomePage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [defaultStartAddress, setDefaultStartAddress] = useState('')
   const [currentOdometerKm, setCurrentOdometerKm] = useState<number | null>(null)
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([])
   const [defaultVehicle, setDefaultVehicle] = useState<Vehicle | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>({
@@ -29,15 +30,17 @@ export default function HomePage() {
   }, [])
 
   async function loadData() {
-    const [favs, trips, profile, custs, vehicle] = await Promise.all([
+    const [favs, trips, profile, custs, vehicles] = await Promise.all([
       getFavorites(),
       getTrips(new Date().getFullYear(), new Date().getMonth() + 1),
       getProfile(),
       getCustomers(),
-      getDefaultVehicle(),
+      getVehicles(),
     ])
     setFavorites(favs)
     setCustomers(custs)
+    setAllVehicles(vehicles)
+    const vehicle = vehicles.find((v) => v.is_default) ?? null
     setDefaultVehicle(vehicle)
     if (profile?.address) setDefaultStartAddress(profile.address)
     const businessTrips = trips.filter((t) => t.is_business)
@@ -60,7 +63,7 @@ export default function HomePage() {
 
     setOnboardingStatus({
       profileComplete: !!(profile?.full_name && profile?.address && profile?.identifier),
-      vehicleAdded: vehicle !== null,
+      vehicleAdded: vehicles.length > 0,
       odometerSet,
       customersAdded: custs.length > 0,
       hasTrips: anyTrips,
@@ -87,14 +90,15 @@ export default function HomePage() {
 
   async function handleFavoriteTap(fav: FavoriteTrip) {
     try {
-      const vehicle = await getDefaultVehicle()
+      // Use the favorite's assigned vehicle, or fall back to default
+      const vehicleId = fav.vehicle_id ?? defaultVehicle?.id ?? null
       const today = new Date().toISOString().split('T')[0]
 
       // Compute odometer for favorite trips from current reading
       let odometerStartKm: number | null = null
       let odometerEndKm: number | null = null
-      if (vehicle) {
-        const latest = await getLatestReading(vehicle.id)
+      if (vehicleId) {
+        const latest = await getLatestReading(vehicleId)
         if (latest) {
           odometerStartKm = latest.reading_km
           odometerEndKm = Math.round(latest.reading_km + fav.distance_km)
@@ -102,7 +106,7 @@ export default function HomePage() {
       }
 
       await saveTripOfflineAware({
-        vehicle_id: vehicle?.id ?? null,
+        vehicle_id: vehicleId,
         customer_id: fav.customer_id ?? null,
         date: today,
         purpose: fav.purpose,
@@ -115,7 +119,7 @@ export default function HomePage() {
         odometer_start_km: odometerStartKm,
         odometer_end_km: odometerEndKm,
       })
-      await updateOdometerIfHigher(vehicle?.id ?? null, odometerEndKm)
+      await updateOdometerIfHigher(vehicleId, odometerEndKm)
       await loadData()
       showToast(`${fav.label} — ${fav.distance_km} km registreret`)
     } catch (err) {
@@ -128,10 +132,10 @@ export default function HomePage() {
     try {
       await deleteFavorite(id)
       await loadData()
-      showToast('Favorit slettet')
+      showToast('Rute slettet')
     } catch (err) {
       console.error('Failed to delete favorite:', err)
-      showToast('Kunne ikke slette favorit', 'error')
+      showToast('Kunne ikke slette rute', 'error')
     }
   }
 
@@ -139,10 +143,10 @@ export default function HomePage() {
     try {
       await updateFavorite(id, updates)
       await loadData()
-      showToast('Favorit opdateret')
+      showToast('Rute opdateret')
     } catch (err) {
       console.error('Failed to update favorite:', err)
-      showToast('Kunne ikke opdatere favorit', 'error')
+      showToast('Kunne ikke opdatere rute', 'error')
     }
   }
 
@@ -156,6 +160,7 @@ export default function HomePage() {
       is_business: boolean
       transport_type: 'car' | 'public_transport'
       customer_id: string | null
+      vehicle_id: string | null
       odometer_start_km: number | null
       odometer_end_km: number | null
     },
@@ -163,13 +168,13 @@ export default function HomePage() {
     favoriteLabel: string,
   ) {
     try {
-      const vehicle = await getDefaultVehicle()
+      const vehicleId = data.vehicle_id ?? defaultVehicle?.id ?? null
       await saveTripOfflineAware({
         ...data,
-        vehicle_id: vehicle?.id ?? null,
+        vehicle_id: vehicleId,
         gps_track: null,
       })
-      await updateOdometerIfHigher(vehicle?.id ?? null, data.odometer_end_km)
+      await updateOdometerIfHigher(vehicleId, data.odometer_end_km)
 
       if (saveAsFavorite) {
         try {
@@ -181,14 +186,15 @@ export default function HomePage() {
             distance_km: data.distance_km,
             sort_order: favorites.length,
             customer_id: data.customer_id,
+            vehicle_id: vehicleId,
           })
-          showToast('Tur + favorit gemt')
+          showToast('Tur gemt + rute tilføjet')
         } catch (favErr: unknown) {
           const msg = favErr && typeof favErr === 'object' && 'message' in favErr
             ? String((favErr as Record<string, unknown>).message)
             : JSON.stringify(favErr)
           console.error('Failed to save favorite:', msg, favErr)
-          showToast('Tur gemt, men favorit fejlede: ' + msg, 'error')
+          showToast('Tur gemt, men rute fejlede: ' + msg, 'error')
         }
       } else {
         showToast('Tur gemt')
@@ -209,6 +215,7 @@ export default function HomePage() {
       <HomeContent
         favorites={favorites}
         customers={customers}
+        vehicles={allVehicles}
         monthStats={monthStats}
         defaultStartAddress={defaultStartAddress}
         currentOdometerKm={currentOdometerKm}

@@ -13,6 +13,7 @@ describe('HomeContent', () => {
       <HomeContent
         favorites={[]}
         customers={[]}
+        vehicles={[]}
         monthStats={{ totalKm: 0, tripCount: 0 }}
         defaultStartAddress=""
         currentOdometerKm={null}
@@ -27,7 +28,7 @@ describe('HomeContent', () => {
       />
     )
     expect(screen.getByText(/denne måned/i)).toBeInTheDocument()
-    expect(screen.getByText(/ny tur/i)).toBeInTheDocument()
-    expect(screen.getByText(/start gps/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /ny tur/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /start gps/i })).toBeInTheDocument()
   })
 })

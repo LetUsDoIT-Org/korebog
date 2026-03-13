@@ -21,7 +21,7 @@ export default function ExportPage() {
     const supabase = createClient()
     const { data: trips } = await supabase
       .from('trips')
-      .select('*, vehicles(registration_number)')
+      .select('*, vehicles(registration_number), customers(name)')
       .gte('date', from)
       .lte('date', to)
       .eq('is_business', true)
@@ -41,6 +41,7 @@ export default function ExportPage() {
         distance_km: Number(t.distance_km),
         transport_type: t.transport_type,
         registration_number: t.vehicles?.registration_number ?? '',
+        customer_name: t.customers?.name ?? '',
         odometer_start_km: t.odometer_start_km ?? null,
         odometer_end_km: t.odometer_end_km ?? null,
       })),

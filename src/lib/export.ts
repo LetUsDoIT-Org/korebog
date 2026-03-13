@@ -6,16 +6,18 @@ type ExportTrip = {
   distance_km: number
   transport_type: string
   registration_number: string
+  customer_name: string
   odometer_start_km: number | null
   odometer_end_km: number | null
 }
 
 export function tripsToCSV(trips: ExportTrip[]): string {
-  const header = 'Dato;Formål;Startadresse;Slutadresse;Km;Km-tæller start;Km-tæller slut;Registreringsnummer;Transporttype'
+  const header = 'Dato;Formål;Kunde;Startadresse;Slutadresse;Km;Km-tæller start;Km-tæller slut;Registreringsnummer;Transporttype'
   const rows = trips.map((t) =>
     [
       t.date,
       t.purpose,
+      t.customer_name,
       t.start_address,
       t.end_address,
       t.distance_km,
@@ -60,10 +62,11 @@ export async function generatePDF(
 
   autoTable(doc, {
     startY: 58,
-    head: [['Dato', 'Formål', 'Fra', 'Til', 'Km', 'Km start', 'Km slut', 'Reg.nr.', 'Transport']],
+    head: [['Dato', 'Formål', 'Kunde', 'Fra', 'Til', 'Km', 'Km start', 'Km slut', 'Reg.nr.', 'Transport']],
     body: trips.map((t) => [
       t.date,
       t.purpose,
+      t.customer_name,
       t.start_address,
       t.end_address,
       t.distance_km.toString(),

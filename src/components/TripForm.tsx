@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AddressInput } from './AddressInput'
 import { calculateDistance } from '@/lib/maps'
-import type { Customer } from '@/types/database'
+import { getLatestReading, estimateCurrentKm } from '@/lib/api/odometer'
+import type { Customer, Vehicle } from '@/types/database'
 
 type TripData = {
   date: string
@@ -14,6 +15,7 @@ type TripData = {
   is_business: boolean
   transport_type: 'car' | 'public_transport'
   customer_id: string | null
+  vehicle_id: string | null
   odometer_start_km: number | null
   odometer_end_km: number | null
 }
@@ -22,10 +24,12 @@ type Props = {
   onSave: (data: TripData, saveAsFavorite: boolean, favoriteLabel: string) => void
   initial?: Partial<TripData>
   customers?: Customer[]
+  vehicles?: Vehicle[]
+  defaultVehicleId?: string | null
   currentOdometerKm?: number | null
 }
 
-export function TripForm({ onSave, initial, customers = [], currentOdometerKm }: Props) {
+export function TripForm({ onSave, initial, customers = [], vehicles = [], defaultVehicleId, currentOdometerKm }: Props) {
   const today = new Date().toISOString().split('T')[0]
   const [date, setDate] = useState(initial?.date ?? today)
   const [purpose, setPurpose] = useState(initial?.purpose ?? 'Kundemøde')
@@ -39,10 +43,26 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
   const [calculating, setCalculating] = useState(false)
   const [returnTrip, setReturnTrip] = useState(initial?.distance_km ? false : true)
   const [customerId, setCustomerId] = useState<string | null>(initial?.customer_id ?? null)
+  const [vehicleId, setVehicleId] = useState<string | null>(initial?.vehicle_id ?? defaultVehicleId ?? vehicles.find((v) => v.is_default)?.id ?? null)
   const [saveAsFav, setSaveAsFav] = useState(false)
   const [favLabel, setFavLabel] = useState('')
   const [showOptions, setShowOptions] = useState(false)
   const initialOdometer = initial?.odometer_start_km ?? currentOdometerKm ?? 0
+
+  // When vehicle changes, load its odometer
+  useEffect(() => {
+    if (!vehicleId || vehicles.length <= 1) return
+    // Don't override if we already have an initial odometer value
+    if (initial?.odometer_start_km) return
+    getLatestReading(vehicleId).then((reading) => {
+      if (reading) {
+        const est = estimateCurrentKm(reading.reading_km, reading.date)
+        setOdometerStart(est > 0 ? String(est) : '')
+      } else {
+        setOdometerStart('')
+      }
+    })
+  }, [vehicleId]) // eslint-disable-line react-hooks/exhaustive-deps
   const [odometerStart, setOdometerStart] = useState<string>(
     initialOdometer > 0 ? String(initialOdometer) : ''
   )
@@ -102,6 +122,7 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
       is_business: isBusiness,
       transport_type: transportType,
       customer_id: customerId,
+      vehicle_id: vehicleId,
       odometer_start_km: odometerStartNum > 0 ? odometerStartNum : null,
       odometer_end_km: odometerEnd,
     }, saveAsFav, favLabel || purpose)
@@ -109,6 +130,29 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Vehicle chips */}
+      {vehicles.length > 1 && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Bil</p>
+          <div className="flex flex-wrap gap-2">
+            {vehicles.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVehicleId(v.id)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                  vehicleId === v.id
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                {v.name} <span className="text-xs opacity-75">{v.registration_number}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Customer chips */}
       {customers.length > 0 && (
         <div className="space-y-1">
@@ -306,12 +350,12 @@ export function TripForm({ onSave, initial, customers = [], currentOdometerKm }:
             onChange={(e) => setSaveAsFav(e.target.checked)}
             className="w-5 h-5 rounded"
           />
-          <span className="text-base">Gem som favorit</span>
+          <span className="text-base">Gem som ofte kørt rute</span>
         </label>
         {saveAsFav && (
           <input
             type="text"
-            placeholder="Favorit-navn (f.eks. Kundemøde - Acme)"
+            placeholder="Navn på rute (f.eks. Kundemøde - Acme)"
             value={favLabel}
             onChange={(e) => setFavLabel(e.target.value)}
             className="w-full rounded-lg border p-3 text-lg dark:bg-gray-800 dark:border-gray-700"

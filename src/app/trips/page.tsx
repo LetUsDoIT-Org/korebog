@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { TripsList } from '@/components/TripsList'
 import { getTrips, deleteTrip, updateTrip } from '@/lib/api/trips'
 import { getCustomers } from '@/lib/api/customers'
-import { getDefaultVehicle } from '@/lib/api/vehicles'
+import { getVehicles } from '@/lib/api/vehicles'
 import { getLatestReading, estimateCurrentKm } from '@/lib/api/odometer'
-import type { Trip, Customer } from '@/types/database'
+import type { Trip, Customer, Vehicle } from '@/types/database'
 
 export default function TripsPage() {
   const now = new Date()
@@ -14,6 +14,7 @@ export default function TripsPage() {
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [trips, setTrips] = useState<Trip[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([])
   const [currentOdometerKm, setCurrentOdometerKm] = useState<number | null>(null)
 
   useEffect(() => {
@@ -22,13 +23,15 @@ export default function TripsPage() {
 
   useEffect(() => {
     async function loadExtras() {
-      const [custs, vehicle] = await Promise.all([
+      const [custs, vehicles] = await Promise.all([
         getCustomers(),
-        getDefaultVehicle(),
+        getVehicles(),
       ])
       setCustomers(custs)
-      if (vehicle) {
-        const latest = await getLatestReading(vehicle.id)
+      setAllVehicles(vehicles)
+      const defaultVehicle = vehicles.find(v => v.is_default)
+      if (defaultVehicle) {
+        const latest = await getLatestReading(defaultVehicle.id)
         if (latest) {
           setCurrentOdometerKm(estimateCurrentKm(latest.reading_km, latest.date))
         }
@@ -61,6 +64,7 @@ export default function TripsPage() {
     is_business: boolean
     transport_type: 'car' | 'public_transport'
     customer_id: string | null
+    vehicle_id: string | null
     odometer_start_km: number | null
     odometer_end_km: number | null
   }) {
@@ -84,6 +88,7 @@ export default function TripsPage() {
       <TripsList
         trips={trips}
         customers={customers}
+        vehicles={allVehicles}
         currentOdometerKm={currentOdometerKm}
         onDelete={handleDelete}
         onUpdate={handleUpdate}

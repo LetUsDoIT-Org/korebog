@@ -5,12 +5,13 @@ import type { FavoriteTrip } from '@/types/database'
 
 type Props = {
   favorite: FavoriteTrip
+  vehicleLabel?: string
   onTap: (fav: FavoriteTrip) => void
   onDelete: (id: string) => void
   onUpdate: (id: string, updates: Partial<FavoriteTrip>) => void
 }
 
-export function FavoriteTripCard({ favorite, onTap, onDelete, onUpdate }: Props) {
+export function FavoriteTripCard({ favorite, vehicleLabel, onTap, onDelete, onUpdate }: Props) {
   const [editing, setEditing] = useState(false)
   const [label, setLabel] = useState(favorite.label)
   const [purpose, setPurpose] = useState(favorite.purpose)
@@ -90,9 +91,16 @@ export function FavoriteTripCard({ favorite, onTap, onDelete, onUpdate }: Props)
           {favorite.start_address} → {favorite.end_address}
         </p>
         <div className="flex items-center justify-between">
-          <p className="text-sm font-mono text-blue-600 dark:text-blue-400">
-            {favorite.distance_km} km
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-mono text-blue-600 dark:text-blue-400">
+              {favorite.distance_km} km
+            </p>
+            {vehicleLabel && (
+              <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                🚗 {vehicleLabel}
+              </span>
+            )}
+          </div>
           <button
             onClick={() => onTap(favorite)}
             className="rounded-lg bg-green-600 px-4 py-2 text-white text-sm font-semibold hover:bg-green-700 active:scale-95 transition-all"
