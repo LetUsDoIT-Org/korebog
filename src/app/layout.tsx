@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kørebog",
   description: "Digital kørebog til registrering af erhvervskørsel",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Kørebog",
+  },
 };
 
 export default function RootLayout({
