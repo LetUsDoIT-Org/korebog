@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import type { FavoriteTrip, Customer } from '@/types/database'
 import { FavoriteTripCard } from './FavoriteTripCard'
 import { TripForm } from './TripForm'
+import { GpsTracker } from './GpsTracker'
 import { OnboardingChecklist, type OnboardingStatus } from './OnboardingChecklist'
 
 type TripData = {
@@ -34,6 +35,8 @@ type Props = {
 
 export function HomeContent({ favorites, customers, monthStats, defaultStartAddress, currentOdometerKm, onboardingStatus, onFavoriteTap, onFavoriteDelete, onFavoriteUpdate, onTripSave }: Props) {
   const [showNewTrip, setShowNewTrip] = useState(false)
+  const [showGps, setShowGps] = useState(false)
+  const [gpsDistance, setGpsDistance] = useState<number | null>(null)
   const [monthName, setMonthName] = useState('')
 
   useEffect(() => {
@@ -71,33 +74,55 @@ export function HomeContent({ favorites, customers, monthStats, defaultStartAddr
       )}
 
       {/* Action buttons */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setShowNewTrip(true)}
-          className="flex-1 rounded-lg bg-green-600 p-4 text-white font-semibold text-lg hover:bg-green-700"
-        >
-          Ny tur
-        </button>
-        <button
-          onClick={() => {/* GPS tracking - Task 13 */}}
-          className="flex-1 rounded-lg bg-purple-600 p-4 text-white font-semibold text-lg hover:bg-purple-700"
-        >
-          Start GPS
-        </button>
-      </div>
+      {!showGps && !showNewTrip && (
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowNewTrip(true)}
+            className="flex-1 rounded-lg bg-green-600 p-4 text-white font-semibold text-lg hover:bg-green-700"
+          >
+            Ny tur
+          </button>
+          <button
+            onClick={() => setShowGps(true)}
+            className="flex-1 rounded-lg bg-purple-600 p-4 text-white font-semibold text-lg hover:bg-purple-700"
+          >
+            Start GPS
+          </button>
+        </div>
+      )}
 
-      {/* New trip form (slide in) */}
+      {/* GPS tracker */}
+      {showGps && !showNewTrip && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold">GPS-sporing</h2>
+          </div>
+          <GpsTracker
+            onComplete={(data) => {
+              setShowGps(false)
+              setGpsDistance(data.distanceKm)
+              setShowNewTrip(true)
+            }}
+            onCancel={() => setShowGps(false)}
+          />
+        </div>
+      )}
+
+      {/* New trip form */}
       {showNewTrip && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Ny tur</h2>
-            <button onClick={() => setShowNewTrip(false)} className="text-gray-500 text-2xl">&times;</button>
+            <h2 className="text-lg font-semibold">{gpsDistance !== null ? 'Gem GPS-tur' : 'Ny tur'}</h2>
+            <button onClick={() => { setShowNewTrip(false); setGpsDistance(null) }} className="text-gray-500 text-2xl">&times;</button>
           </div>
           <TripForm
-            initial={{ start_address: defaultStartAddress }}
+            initial={{
+              start_address: defaultStartAddress,
+              ...(gpsDistance !== null ? { distance_km: gpsDistance } : {}),
+            }}
             customers={customers}
             currentOdometerKm={currentOdometerKm}
-            onSave={async (data, saveAsFav, favLabel) => { await onTripSave(data, saveAsFav, favLabel); setShowNewTrip(false) }}
+            onSave={async (data, saveAsFav, favLabel) => { await onTripSave(data, saveAsFav, favLabel); setShowNewTrip(false); setGpsDistance(null) }}
           />
         </div>
       )}
