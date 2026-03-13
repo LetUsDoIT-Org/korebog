@@ -12,18 +12,19 @@ describe('FavoriteTripCard', () => {
     distance_km: 312,
     sort_order: 0,
     user_id: 'u1',
+    customer_id: null,
     created_at: '',
   }
 
   it('renders label and distance', () => {
-    render(<FavoriteTripCard favorite={favorite} onTap={vi.fn()} />)
+    render(<FavoriteTripCard favorite={favorite} onTap={vi.fn()} onDelete={vi.fn()} onUpdate={vi.fn()} />)
     expect(screen.getByText('Kundemøde - Acme')).toBeInTheDocument()
     expect(screen.getByText('312 km')).toBeInTheDocument()
   })
 
   it('calls onTap when clicked', () => {
     const onTap = vi.fn()
-    render(<FavoriteTripCard favorite={favorite} onTap={onTap} />)
+    render(<FavoriteTripCard favorite={favorite} onTap={onTap} onDelete={vi.fn()} onUpdate={vi.fn()} />)
     fireEvent.click(screen.getByText('Kundemøde - Acme'))
     expect(onTap).toHaveBeenCalledWith(favorite)
   })

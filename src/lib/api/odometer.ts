@@ -7,9 +7,9 @@ export async function getLatestReading(vehicleId: string): Promise<OdometerReadi
     .from('odometer_readings')
     .select('*')
     .eq('vehicle_id', vehicleId)
-    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
   return data
 }
 
@@ -19,7 +19,7 @@ export async function getReadings(vehicleId: string): Promise<OdometerReading[]>
     .from('odometer_readings')
     .select('*')
     .eq('vehicle_id', vehicleId)
-    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
 }

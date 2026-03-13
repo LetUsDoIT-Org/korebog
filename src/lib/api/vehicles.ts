@@ -17,7 +17,7 @@ export async function getDefaultVehicle(): Promise<Vehicle | null> {
     .from('vehicles')
     .select('*')
     .eq('is_default', true)
-    .single()
+    .maybeSingle()
   return data
 }
 

@@ -30,3 +30,18 @@ export async function deleteFavorite(id: string): Promise<void> {
   const { error } = await supabase.from('favorite_trips').delete().eq('id', id)
   if (error) throw error
 }
+
+export async function updateFavorite(
+  id: string,
+  updates: Partial<Omit<FavoriteTrip, 'id' | 'user_id' | 'created_at'>>,
+): Promise<FavoriteTrip> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('favorite_trips')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}

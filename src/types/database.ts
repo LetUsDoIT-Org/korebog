@@ -17,10 +17,19 @@ export type OdometerReading = {
   created_at: string
 }
 
+export type Customer = {
+  id: string
+  user_id: string
+  name: string
+  address: string
+  created_at: string
+}
+
 export type Trip = {
   id: string
   user_id: string
   vehicle_id: string | null
+  customer_id: string | null
   date: string
   purpose: string
   start_address: string
@@ -28,6 +37,8 @@ export type Trip = {
   distance_km: number
   is_business: boolean
   transport_type: 'car' | 'public_transport'
+  odometer_start_km: number | null
+  odometer_end_km: number | null
   gps_track: Array<{ lat: number; lng: number; timestamp: number }> | null
   created_at: string
 }
@@ -41,6 +52,7 @@ export type FavoriteTrip = {
   end_address: string
   distance_km: number
   sort_order: number
+  customer_id: string | null
   created_at: string
 }
 

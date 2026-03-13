@@ -7,11 +7,11 @@ describe('tripsToCSV', () => {
       {
         date: '2026-03-10', purpose: 'Kundemøde', start_address: 'København',
         end_address: 'Aarhus', distance_km: 312, transport_type: 'car',
-        registration_number: 'AB12345',
+        registration_number: 'AB12345', odometer_start_km: null, odometer_end_km: null,
       },
     ]
     const csv = tripsToCSV(trips)
-    expect(csv).toContain('Dato;Formål;Startadresse;Slutadresse;Km;Registreringsnummer;Transporttype')
-    expect(csv).toContain('2026-03-10;Kundemøde;København;Aarhus;312;AB12345;Bil')
+    expect(csv).toContain('Dato;Formål;Startadresse;Slutadresse;Km;Km-tæller start;Km-tæller slut;Registreringsnummer;Transporttype')
+    expect(csv).toContain('2026-03-10;Kundemøde;København;Aarhus;312;;;AB12345;Bil')
   })
 })

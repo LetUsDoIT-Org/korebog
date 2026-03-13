@@ -12,8 +12,14 @@ describe('HomeContent', () => {
     render(
       <HomeContent
         favorites={[]}
+        customers={[]}
         monthStats={{ totalKm: 0, tripCount: 0 }}
+        defaultStartAddress=""
+        currentOdometerKm={null}
         onFavoriteTap={vi.fn()}
+        onFavoriteDelete={vi.fn()}
+        onFavoriteUpdate={vi.fn()}
+        onTripSave={vi.fn()}
       />
     )
     expect(screen.getByText(/denne måned/i)).toBeInTheDocument()

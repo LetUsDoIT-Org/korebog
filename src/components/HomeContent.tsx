@@ -1,27 +1,49 @@
 'use client'
 
-import { useState } from 'react'
-import type { FavoriteTrip } from '@/types/database'
+import { useState, useEffect } from 'react'
+import type { FavoriteTrip, Customer } from '@/types/database'
 import { FavoriteTripCard } from './FavoriteTripCard'
 import { TripForm } from './TripForm'
 
-type Props = {
-  favorites: FavoriteTrip[]
-  monthStats: { totalKm: number; tripCount: number }
-  onFavoriteTap: (fav: FavoriteTrip) => void
+type TripData = {
+  date: string
+  purpose: string
+  start_address: string
+  end_address: string
+  distance_km: number
+  is_business: boolean
+  transport_type: 'car' | 'public_transport'
+  customer_id: string | null
+  odometer_start_km: number | null
+  odometer_end_km: number | null
 }
 
-export function HomeContent({ favorites, monthStats, onFavoriteTap }: Props) {
-  const [showNewTrip, setShowNewTrip] = useState(false)
+type Props = {
+  favorites: FavoriteTrip[]
+  customers: Customer[]
+  monthStats: { totalKm: number; tripCount: number }
+  defaultStartAddress: string
+  currentOdometerKm: number | null
+  onFavoriteTap: (fav: FavoriteTrip) => void
+  onFavoriteDelete: (id: string) => void
+  onFavoriteUpdate: (id: string, updates: Partial<FavoriteTrip>) => void
+  onTripSave: (data: TripData, saveAsFavorite: boolean, favoriteLabel: string) => Promise<void>
+}
 
-  const monthName = new Date().toLocaleDateString('da-DK', { month: 'long', year: 'numeric' })
+export function HomeContent({ favorites, customers, monthStats, defaultStartAddress, currentOdometerKm, onFavoriteTap, onFavoriteDelete, onFavoriteUpdate, onTripSave }: Props) {
+  const [showNewTrip, setShowNewTrip] = useState(false)
+  const [monthName, setMonthName] = useState('')
+
+  useEffect(() => {
+    setMonthName(new Date().toLocaleDateString('da-DK', { month: 'long', year: 'numeric' }))
+  }, [])
 
   return (
     <div className="p-4 max-w-lg mx-auto space-y-6">
       {/* Month stats */}
       <div className="rounded-xl bg-blue-50 dark:bg-blue-950 p-4 text-center">
         <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">Denne måned - {monthName}</p>
-        <p className="text-3xl font-bold mt-1">{monthStats.totalKm} km</p>
+        <p className="text-3xl font-bold mt-1">{Math.round(monthStats.totalKm)} km</p>
         <p className="text-sm text-gray-500">{monthStats.tripCount} ture</p>
       </div>
 
@@ -31,7 +53,13 @@ export function HomeContent({ favorites, monthStats, onFavoriteTap }: Props) {
           <h2 className="text-lg font-semibold">Hurtig registrering</h2>
           <div className="grid grid-cols-1 gap-3">
             {favorites.map((fav) => (
-              <FavoriteTripCard key={fav.id} favorite={fav} onTap={onFavoriteTap} />
+              <FavoriteTripCard
+                key={fav.id}
+                favorite={fav}
+                onTap={onFavoriteTap}
+                onDelete={onFavoriteDelete}
+                onUpdate={onFavoriteUpdate}
+              />
             ))}
           </div>
         </div>
@@ -60,7 +88,12 @@ export function HomeContent({ favorites, monthStats, onFavoriteTap }: Props) {
             <h2 className="text-lg font-semibold">Ny tur</h2>
             <button onClick={() => setShowNewTrip(false)} className="text-gray-500 text-2xl">&times;</button>
           </div>
-          <TripForm onSave={() => setShowNewTrip(false)} />
+          <TripForm
+            initial={{ start_address: defaultStartAddress }}
+            customers={customers}
+            currentOdometerKm={currentOdometerKm}
+            onSave={async (data, saveAsFav, favLabel) => { await onTripSave(data, saveAsFav, favLabel); setShowNewTrip(false) }}
+          />
         </div>
       )}
     </div>

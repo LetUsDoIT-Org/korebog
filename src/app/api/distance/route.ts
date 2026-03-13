@@ -20,13 +20,29 @@ export async function GET(request: Request) {
     )
   }
 
-  const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${apiKey}`
+  // Use Routes API (New) instead of legacy Directions API
+  const res = await fetch(
+    'https://routes.googleapis.com/directions/v2:computeRoutes',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'routes.distanceMeters',
+      },
+      body: JSON.stringify({
+        origin: { address: origin },
+        destination: { address: destination },
+        travelMode: 'DRIVE',
+        regionCode: 'DK',
+      }),
+    }
+  )
 
-  const res = await fetch(url)
   const data = await res.json()
 
   if (data.routes?.length > 0) {
-    const meters = data.routes[0].legs[0].distance.value
+    const meters = data.routes[0].distanceMeters
     return NextResponse.json({ distanceKm: Math.round(meters / 100) / 10 })
   }
 

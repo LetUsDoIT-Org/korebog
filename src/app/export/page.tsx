@@ -37,6 +37,8 @@ export default function ExportPage() {
         distance_km: Number(t.distance_km),
         transport_type: t.transport_type,
         registration_number: t.vehicles?.registration_number ?? '',
+        odometer_start_km: t.odometer_start_km ?? null,
+        odometer_end_km: t.odometer_end_km ?? null,
       })),
       userInfo: {
         name: profile?.full_name ?? '',

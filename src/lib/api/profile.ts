@@ -3,7 +3,7 @@ import type { UserProfile } from '@/types/database'
 
 export async function getProfile(): Promise<UserProfile | null> {
   const supabase = createClient()
-  const { data } = await supabase.from('user_profiles').select('*').single()
+  const { data } = await supabase.from('user_profiles').select('*').maybeSingle()
   return data
 }
 

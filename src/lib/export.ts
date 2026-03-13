@@ -6,10 +6,12 @@ type ExportTrip = {
   distance_km: number
   transport_type: string
   registration_number: string
+  odometer_start_km: number | null
+  odometer_end_km: number | null
 }
 
 export function tripsToCSV(trips: ExportTrip[]): string {
-  const header = 'Dato;Formål;Startadresse;Slutadresse;Km;Registreringsnummer;Transporttype'
+  const header = 'Dato;Formål;Startadresse;Slutadresse;Km;Km-tæller start;Km-tæller slut;Registreringsnummer;Transporttype'
   const rows = trips.map((t) =>
     [
       t.date,
@@ -17,6 +19,8 @@ export function tripsToCSV(trips: ExportTrip[]): string {
       t.start_address,
       t.end_address,
       t.distance_km,
+      t.odometer_start_km ?? '',
+      t.odometer_end_km ?? '',
       t.registration_number,
       t.transport_type === 'car' ? 'Bil' : 'Offentlig transport',
     ].join(';')
@@ -43,7 +47,7 @@ export async function generatePDF(
   const { default: jsPDF } = await import('jspdf')
   const { default: autoTable } = await import('jspdf-autotable')
 
-  const doc = new jsPDF()
+  const doc = new jsPDF({ orientation: 'landscape' })
 
   doc.setFontSize(18)
   doc.text('Kørebog', 14, 22)
@@ -56,13 +60,15 @@ export async function generatePDF(
 
   autoTable(doc, {
     startY: 58,
-    head: [['Dato', 'Formål', 'Fra', 'Til', 'Km', 'Reg.nr.', 'Transport']],
+    head: [['Dato', 'Formål', 'Fra', 'Til', 'Km', 'Km start', 'Km slut', 'Reg.nr.', 'Transport']],
     body: trips.map((t) => [
       t.date,
       t.purpose,
       t.start_address,
       t.end_address,
       t.distance_km.toString(),
+      t.odometer_start_km?.toString() ?? '',
+      t.odometer_end_km?.toString() ?? '',
       t.registration_number,
       t.transport_type === 'car' ? 'Bil' : 'Offentlig',
     ]),

@@ -9,7 +9,7 @@ describe('TripsList', () => {
         id: '1', user_id: 'u1', vehicle_id: 'v1', date: '2026-03-10',
         purpose: 'Kundemøde', start_address: 'København', end_address: 'Aarhus',
         distance_km: 312, is_business: true, transport_type: 'car' as const,
-        gps_track: null, created_at: '',
+        gps_track: null, customer_id: null, odometer_start_km: null, odometer_end_km: null, created_at: '',
       },
     ]
     render(<TripsList trips={trips} onDelete={vi.fn()} />)
