@@ -90,18 +90,19 @@ Present the draft to user before creating. Format depends on type:
 
 Markdown headings (`##`) inside a quoted `--body` argument trip Claude Code's command-injection guard ("Newline followed by # inside a quoted argument can hide arguments from path validation"). **Always** write the body to a temp file with the Write tool and use `--body-file`.
 
-1. Use the Write tool to create `/tmp/issue-body.md` containing the full markdown body.
+1. Use the Write tool to create `tmp/issue-body.md` containing the full markdown body.
 2. Create the issue referencing that file:
 ```bash
 gh issue create \
   --repo "LetUsDoIT-Org/<REPO>" \
   --title "<TITLE>" \
-  --body-file /tmp/issue-body.md \
+  --body-file tmp/issue-body.md \
   --assignee @me \
   --label "<PRIORITY>"
 ```
 3. Capture the issue URL and extract the issue number from the output.
-4. Delete `/tmp/issue-body.md` when done.
+
+**Do NOT delete `tmp/issue-body.md` afterwards.** The `tmp/` directory is gitignored scratch space — the next issue creation will overwrite the file. Deleting it would prompt for `rm` permission unnecessarily.
 
 **Step 2: Get node ID**
 ```bash
