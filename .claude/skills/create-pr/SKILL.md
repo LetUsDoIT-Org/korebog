@@ -1,7 +1,7 @@
 ---
 name: create-pr
 description: Create a pull request with accurate descriptions. Supports feature→dev and dev→main. Use when user says "create pr", "/pr", "make a pr", or "pull request".
-model: sonnet
+model: claude-sonnet-4-6
 ---
 
 # Create Pull Request

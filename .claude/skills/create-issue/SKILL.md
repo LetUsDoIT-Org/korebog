@@ -1,7 +1,7 @@
 ---
 name: create-issue
 description: Create GitHub issues for LetUsDoIT projects (Havemakker, etc.). Sets issue type via GraphQL, adds to project board, assigns priority labels. Use when user says "create issue", "new issue", "file a bug", or wants to track work.
-model: sonnet
+model: claude-sonnet-4-6
 ---
 
 # Create Issue — LetUsDoIT

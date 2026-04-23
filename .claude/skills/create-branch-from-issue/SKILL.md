@@ -1,7 +1,7 @@
 ---
 name: create-branch-from-issue
 description: Create a properly named branch from dev for a GitHub issue. Handles branch naming, upstream tracking, and PR creation. Use when user says "create branch", "start work on issue", or provides an issue number to work on.
-model: sonnet
+model: claude-sonnet-4-6
 ---
 
 # Create Branch From Issue
