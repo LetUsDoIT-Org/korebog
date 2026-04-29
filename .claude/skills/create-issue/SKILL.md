@@ -1,12 +1,25 @@
 ---
 name: create-issue
-description: Create GitHub issues for LetUsDoIT projects (Havemakker, etc.). Sets issue type via GraphQL, adds to project board, assigns priority labels. Use when user says "create issue", "new issue", "file a bug", or wants to track work.
+description: Create GitHub issues for LetUsDoIT projects (Havemakker, etc.). Sets issue type via GraphQL, adds to project board, assigns priority labels. Always invoked via a subagent — the main thread confirms the draft and the subagent runs the gh calls. Use when user says "create issue", "new issue", "file a bug", or wants to track work.
 model: claude-sonnet-4-6
 ---
 
 # Create Issue — LetUsDoIT
 
 **Announce:** "I'm using the create-issue skill to create a GitHub issue."
+
+## MANDATORY: Always run via a subagent
+
+**Never execute this workflow in the main conversation.** The full flow (duplicate check, drafting body, creating issue, getting node ID, setting type, adding to project, looking up iteration, setting sprint, optionally linking sub-issues) is 6+ Bash calls per issue and pollutes the main context with `gh` JSON output that the user does not need to see.
+
+When this skill is invoked:
+
+1. **Confirm the draft with the user in the main thread** (title, type, priority, repo, body). The subagent will not have the full conversation context, so alignment must happen here.
+2. **Dispatch a subagent** (`Agent` tool, `general-purpose` type) with a self-contained prompt that includes: the confirmed title(s), body content (or instruction to write to `tmp/issue-body.md`), type, priority label, repo, any sub-issue parent, and a pointer to this SKILL.md for the step-by-step procedure.
+3. **The subagent runs all `gh` calls and reports back** the issue number, URL, and confirmation that type + project + sprint were set.
+4. **Relay the subagent's report** to the user in a compact form (issue numbers + URLs).
+
+For batch issue creation (multiple issues in one triage pass), dispatch a single subagent with all issues in the prompt — not one subagent per issue.
 
 ## Org Config
 
