@@ -51,6 +51,31 @@ Every issue gets one priority label:
 
 Ask user for priority if not obvious from context.
 
+## Area Labels (Havemakker repos — mandatory)
+
+For issues in `havemakker_frontend` / `havemakker`, every issue **also** gets exactly one
+`area:*` label naming the surface it touches. This keeps the backlog batchable by area (work one
+chat issue → the `whats-next` skill can surface sibling chat issues) and feeds the blended
+backlog ranking. Pick the single best fit:
+
+| Label | Surface |
+|-------|---------|
+| `area:plants` | Plant registry, catalog, details, Min Have, AI identification |
+| `area:care-tasks` | Care schedule engine, task UI, calendar, climate profile, årshjul |
+| `area:chat` | AI plant/bed chat, conversational Q&A, chat UI/keyboard |
+| `area:havekort` | Garden map: satellite, beds, matrikelkort, plant placement |
+| `area:notifications` | Push delivery, scheduling, content |
+| `area:onboarding` | Signup, login, magic link, invite/welcome, account structure |
+| `area:comms` | Admin communications, broadcasts, email templates, Resend |
+| `area:paywall` | Stripe, premium gating, subscription/trial state |
+| `area:testing` | Jest, Maestro, unit/integration/E2E, CI test wiring |
+| `area:release` | EAS builds, OTA, store submission, compliance |
+| `area:growth` | Surveys, marketing, analytics, prioritization & discovery modules |
+| `area:infra` | Supabase platform, edge functions, security, RLS, deps, migrations, SDK upgrades |
+
+Infer from the issue topic; ask only if genuinely ambiguous between two areas. Do **not** invent
+new `area:*` values — if nothing fits, use the closest and flag it to the user.
+
 ## Workflow
 
 ### 1. Gather Information
@@ -58,6 +83,7 @@ Ask user for priority if not obvious from context.
 Determine from user's request:
 - **Type** (Feature/Bug/Task) — infer from keywords
 - **Priority** (P0/P1/P2) — ask if not clear
+- **Area** (`area:*`) — infer from topic (Havemakker repos; see Area Labels table)
 - **Title** — concise, imperative form
 - **Repository** — code vs planning
 
@@ -111,8 +137,12 @@ gh issue create \
   --title "<TITLE>" \
   --body-file tmp/issue-body.md \
   --assignee @me \
-  --label "<PRIORITY>"
+  --label "<PRIORITY>" \
+  --label "<AREA>"
 ```
+
+For Havemakker repos, pass both labels (`--label "<PRIORITY>" --label "<AREA>"`). For other
+repos that have no `area:*` taxonomy, pass just the priority label.
 3. Capture the issue URL and extract the issue number from the output.
 
 **Do NOT delete `tmp/issue-body.md` afterwards.** The `tmp/` directory is gitignored scratch space — the next issue creation will overwrite the file. Deleting it would prompt for `rm` permission unnecessarily.
@@ -180,6 +210,7 @@ Created: #<number> <title>
 URL: <url>
 Type: <type>
 Priority: <P0|P1|P2>
+Area: <area:*>
 Repository: LetUsDoIT-Org/<repo>
 Assigned: @me
 Project: Havemakker
@@ -199,12 +230,14 @@ gh issue list --repo LetUsDoIT-Org/<repo> --search "<keywords>" --state open --l
 - Use `--type` flag (it doesn't exist in `gh issue create`)
 - Use `--body "..."` with a multi-line markdown string — `##` headings trip the harness guard. Always use `--body-file` with a temp file.
 - Skip priority label
-- Invent labels — only use P0/P1/P2
+- Skip the `area:*` label on Havemakker issues
+- Invent labels — only use P0/P1/P2 and the fixed `area:*` set
 - Skip setting the current sprint on the project item
 
 **Always:**
 - Set issue type via GraphQL mutation after creation
 - Assign one priority label (P0/P1/P2)
+- Assign one `area:*` label on Havemakker issues
 - Link to project #2
 - Set the current `Sprint YYYY.MM` iteration on the project item
 - Default assignee: `@me`

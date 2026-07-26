@@ -25,6 +25,7 @@
       "Bash(gh label:*)",
       "Bash(gh auth:*)",
       "Bash(gh run:*)",
+      "Bash(gh search:*)",
       "WebSearch",
       "Write(**/tmp/*)",
       "Write(**/tmp/**)",

@@ -52,16 +52,39 @@ REMOTE_DEV=$(git rev-parse origin/dev)
 ### 2. Look Up Issue
 
 ```bash
-gh issue view {number} --repo "$ORG/$REPO" --json title,body,issueType,state
+gh issue view {number} --repo "$ORG/$REPO" --json title,body,issueType,state,labels
 ```
 
 **If not found**, check other repos in the same org. Issues may live in a different repo than the code:
 ```bash
 # List org repos and try each
-gh repo list "$ORG" --limit 20 --json name --jq '.[].name'
+gh repo list "$ORG" --limit 20 --json name
 ```
 
 **Common pattern:** PRs and issues share the number space per repo. If you find a PR instead of an issue, check other repos.
+
+### 2b. Surface Sibling Issues by Area
+
+Read the issue's `area:*` label (Havemakker repos carry exactly one). If present, list the other
+open issues on the **same surface** so related work can be batched into this branch:
+
+```bash
+gh issue list --repo "$ORG/$REPO" --state open --label "<area:*>" --json number,title,labels --limit 30
+```
+
+Parse the JSON from the result (do **not** use `--jq '... | ...'` — the global bash hook blocks
+`|` even inside jq strings). Present the siblings compactly, sorted by priority label, e.g.:
+
+```
+You're starting #215 (area:chat). Other open chat issues you might fold in:
+  P1  #228 Give AI plant chat access to user's plant photos
+  P1  #140 AI summary and Q&A over logbook notes
+  P2  #301 Allow using chat before care info has loaded
+```
+
+This is **informational** — don't auto-add them to the branch. Just make the user aware so they
+can decide whether to bundle. If the issue has no `area:*` label, skip this step (and mention the
+label is missing — `create-issue` should have set it).
 
 ### 3. Create Branch
 
@@ -143,6 +166,7 @@ When an issue lives in a different repo than the code:
 - Give up after checking only one repo for the issue
 
 **Always:**
+- Surface sibling issues sharing the issue's `area:*` label before creating the branch
 - Fetch dev and verify local matches remote before creating branch
 - Use `{type}/{number}-{slug}` format
 - Create branch from `origin/dev`
