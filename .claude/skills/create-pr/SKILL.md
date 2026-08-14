@@ -43,6 +43,14 @@ If the user says "from X to Y", use those. Otherwise infer from the table above.
 
 ## Workflow
 
+### Step 0: Check whether a PR already exists
+
+```bash
+gh pr list --repo "$ORG/$REPO" --head "$HEAD" --state all --json number,title,author,isDraft
+```
+
+One call, and it prevents three separate failures: `gh pr create` erroring out *after* you have drafted a full description, silently overwriting a colleague's draft PR, and reviewing a bare branch diff when the PR's own description was available all along. **A user saying "it's not a PR yet" is a hint, not a fact** — verify it.
+
 ### Step 1: Create PR with Placeholder
 
 ```bash

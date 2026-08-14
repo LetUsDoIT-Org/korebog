@@ -1,6 +1,6 @@
 ---
 name: create-issue
-description: Create GitHub issues for LetUsDoIT projects (Havemakker, etc.). Sets issue type via GraphQL, adds to project board, assigns priority labels. Always invoked via a subagent — the main thread confirms the draft and the subagent runs the gh calls. Use when user says "create issue", "new issue", "file a bug", or wants to track work.
+description: Create GitHub issues for LetUsDoIT projects (Havemakker, etc.). Sets issue type via GraphQL, adds to project board, assigns priority labels. Prefers a subagent (main thread confirms the draft, subagent runs the gh calls), and runs inline when agent dispatch is unavailable. Use when user says "create issue", "new issue", "file a bug", or wants to track work.
 model: claude-sonnet-4-6
 ---
 
@@ -8,14 +8,18 @@ model: claude-sonnet-4-6
 
 **Announce:** "I'm using the create-issue skill to create a GitHub issue."
 
-## MANDATORY: Always run via a subagent
+## Prefer a subagent — and degrade gracefully if there isn't one
 
-**Never execute this workflow in the main conversation.** The full flow (duplicate check, drafting body, creating issue, getting node ID, setting type, adding to project, looking up iteration, setting sprint, optionally linking sub-issues) is 6+ Bash calls per issue and pollutes the main context with `gh` JSON output that the user does not need to see.
+**Run this via a subagent when agent dispatch is available.** If it is not — some sessions carry an explicit "do not call the Agent tool unless the user requested it" instruction — **run the steps inline in the main thread instead, and say in one line that you are doing so.** That is a supported path, not a violation: the preference below is context hygiene, not correctness, and the inline route has produced correct issues in five separate sessions.
+
+Note that invoking this skill by name (`/create-issue`) reasonably counts as the user requesting a dispatch, so either resolution is defensible. What is *not* acceptable is stalling on the contradiction — decide, state which you chose, and proceed. Note too that step 1 below requires confirming the draft **in the main thread** regardless, so the flow is always "confirm inline, then dispatch if you can".
+
+**Prefer not to execute the `gh` calls in the main conversation.** The full flow (duplicate check, drafting body, creating issue, getting node ID, setting type, adding to project, looking up iteration, setting sprint, optionally linking sub-issues) is 6+ Bash calls per issue and pollutes the main context with `gh` JSON output that the user does not need to see.
 
 When this skill is invoked:
 
 1. **Confirm the draft with the user in the main thread** (title, type, priority, repo, body). The subagent will not have the full conversation context, so alignment must happen here.
-2. **Dispatch a subagent** (`Agent` tool, `general-purpose` type) with a self-contained prompt that includes: the confirmed title(s), body content (or instruction to write to `tmp/issue-body.md`), type, priority label, repo, any sub-issue parent, and a pointer to this SKILL.md for the step-by-step procedure.
+2. **Dispatch a subagent** (`Agent` tool, `general-purpose` type) with a self-contained prompt that includes: the confirmed title(s), body content (or instruction to write to a unique per-issue temp file `tmp/issue-body-<slug>.md`), type, priority label, repo, any sub-issue parent, and a pointer to this SKILL.md for the step-by-step procedure.
 3. **The subagent runs all `gh` calls and reports back** the issue number, URL, and confirmation that type + project + sprint were set.
 4. **Relay the subagent's report** to the user in a compact form (issue numbers + URLs).
 
@@ -129,13 +133,13 @@ Present the draft to user before creating. Format depends on type:
 
 Markdown headings (`##`) inside a quoted `--body` argument trip Claude Code's command-injection guard ("Newline followed by # inside a quoted argument can hide arguments from path validation"). **Always** write the body to a temp file with the Write tool and use `--body-file`.
 
-1. Use the Write tool to create `tmp/issue-body.md` containing the full markdown body.
+1. Use the Write tool to create a **unique per-issue** temp file `tmp/issue-body-<slug>.md`, where `<slug>` is a short kebab-case fragment of the issue title (e.g. `tmp/issue-body-fix-og-image-refs.md`). Never use a shared fixed name like `tmp/issue-body.md` — parallel sessions and batch runs clobber each other's bodies, and a fixed name forces a mandatory Read of some previous session's stale draft before the Write is allowed. For a batch where two titles would slugify identically, append a counter (`-2`, `-3`). The file holds the full markdown body.
 2. Create the issue referencing that file:
 ```bash
 gh issue create \
   --repo "LetUsDoIT-Org/<REPO>" \
   --title "<TITLE>" \
-  --body-file tmp/issue-body.md \
+  --body-file tmp/issue-body-<slug>.md \
   --assignee @me \
   --label "<PRIORITY>" \
   --label "<AREA>"
@@ -145,7 +149,7 @@ For Havemakker repos, pass both labels (`--label "<PRIORITY>" --label "<AREA>"`)
 repos that have no `area:*` taxonomy, pass just the priority label.
 3. Capture the issue URL and extract the issue number from the output.
 
-**Do NOT delete `tmp/issue-body.md` afterwards.** The `tmp/` directory is gitignored scratch space — the next issue creation will overwrite the file. Deleting it would prompt for `rm` permission unnecessarily.
+**Delete `tmp/issue-body-<slug>.md` at close-out.** Because the name is unique to this issue, it is unambiguously yours to clean. A shared `tmp/issue-body.md` is the opposite: no session can attribute it, so nobody ever removes it, and it accumulates indefinitely. `tmp/` is gitignored scratch space and the `rm` pattern is pre-approved, so this costs no permission prompt.
 
 **Step 2: Get node ID**
 ```bash
@@ -193,7 +197,28 @@ mutation($proj: ID!, $item: ID!, $field: ID!, $iter: String!) {
 }' -f proj="PVT_kwDOC69aK84BDX_5" -f item="<PROJECT_ITEM_ID>" -f field="PVTIF_lADOC69aK84BDX_5zhAYgSw" -f iter="<ITERATION_ID>" --silent
 ```
 
-**Step 6: Link as sub-issue (if applicable)**
+**Step 6: Set Status — do not skip this**
+
+An issue with an empty Status is **invisible on the board**. Project 2 does *not* default it, so it must be set explicitly. (This varies per project — some GitHub projects default Status and some don't, so on any other project, verify after adding rather than assuming either way.)
+
+Havemakker project 2 IDs (stable):
+- Status field ID: `PVTSSF_lADOC69aK84BDX_5zg1T_xE`
+- Options: `Todo` `deff068b` · `In Progress` `3c813cce` · `In Review` `3f3ec22b` · `Done` `a5e4476f`
+
+Default to `Todo` unless the user says otherwise:
+```bash
+gh api graphql -f query='
+mutation($proj: ID!, $item: ID!, $field: ID!, $opt: String!) {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: $proj, itemId: $item, fieldId: $field,
+    value: {singleSelectOptionId: $opt}
+  }) { projectV2Item { id } }
+}' -f proj="PVT_kwDOC69aK84BDX_5" -f item="<PROJECT_ITEM_ID>" -f field="PVTSSF_lADOC69aK84BDX_5zg1T_xE" -f opt="deff068b" --silent
+```
+
+Verify with `gh issue view <n> --json projectItems` — that is also the reliable way to recover a lost item ID. **Do not hunt for the item ID with `gh project item-list`**: on a large board it truncates at `--limit` and has produced both a false match from a *different repo* (which would write the field onto someone else's card) and a phantom "not on the board" for an issue that was. Re-running `gh project item-add … --format json --jq '.id'` is idempotent and returns the existing id, so the add call doubles as the lookup.
+
+**Step 7: Link as sub-issue (if applicable)**
 ```bash
 gh api graphql -f query='
 mutation($parent: ID!, $child: ID!) {

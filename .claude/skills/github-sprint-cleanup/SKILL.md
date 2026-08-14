@@ -1,6 +1,6 @@
 ---
 name: github-sprint-cleanup
-description: Bulk-move uncompleted items from one sprint to another in the Havemakker GitHub project (LetUsDoIT-Org, project 2). Use when user says "sprint cleanup", "sprint rollover", "move uncompleted issues to next sprint", "clean up previous sprint", or wants to roll over any sprint to another. Skips items with Status=Done or closed issues. Always invoked via a subagent — the main thread confirms the plan and the subagent runs the gh calls.
+description: Bulk-move uncompleted items from one sprint to another in the Havemakker GitHub project (LetUsDoIT-Org, project 2). Use when user says "sprint cleanup", "sprint rollover", "move uncompleted issues to next sprint", "clean up previous sprint", or wants to roll over any sprint to another. Skips items with Status=Done or closed issues. Prefers a subagent (main thread confirms the plan, subagent runs the gh calls), and runs inline when agent dispatch is unavailable.
 model: claude-sonnet-4-6
 ---
 
@@ -8,9 +8,11 @@ model: claude-sonnet-4-6
 
 **Announce:** "I'm using the github-sprint-cleanup skill to roll over uncompleted items between sprints."
 
-## MANDATORY: Always run via a subagent
+## Prefer a subagent — and degrade gracefully if there isn't one
 
-**Never execute this workflow in the main conversation.** A full sprint rollover is 15+ Bash calls (paginated discovery, filter, batched mutations, verification) and the discovery query alone can return several MB of JSON. That output has zero value for the user and pollutes the main context.
+**Run this via a subagent when agent dispatch is available.** If it is not — some sessions carry an explicit "do not call the Agent tool unless the user requested it" instruction — run the steps inline instead and say in one line that you are doing so. The preference is context hygiene, not correctness. Do not stall on the contradiction: decide, state which you chose, and proceed.
+
+**Prefer not to execute the bulk `gh` calls in the main conversation.** A full sprint rollover is 15+ Bash calls (paginated discovery, filter, batched mutations, verification) and the discovery query alone can return several MB of JSON. That output has zero value for the user and pollutes the main context.
 
 When this skill is invoked:
 
