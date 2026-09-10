@@ -41,6 +41,10 @@
       "Bash(npx vitest:*)",
       "Bash(npx next:*)",
       "Bash(node:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/letusdoit/Documents/Claude/Projects/LetUsDoIT ApS - finance/",
+      "/Users/letusdoit/Library/CloudStorage/OneDrive-Deltebiblioteker–LetUsDoITApS/LetUsDoIT - Intranet - Documents/Projekter/"
     ]
   }
 }
