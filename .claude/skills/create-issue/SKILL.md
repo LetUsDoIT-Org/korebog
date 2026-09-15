@@ -1,7 +1,7 @@
 ---
 name: create-issue
 description: Create GitHub issues for LetUsDoIT projects (Havemakker, etc.). Sets issue type via GraphQL, adds to project board, assigns priority labels. Prefers a subagent (main thread confirms the draft, subagent runs the gh calls), and runs inline when agent dispatch is unavailable. Use when user says "create issue", "new issue", "file a bug", or wants to track work.
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # Create Issue — LetUsDoIT

@@ -1,7 +1,7 @@
 ---
 name: github-sprint-cleanup
 description: Bulk-move uncompleted items from one sprint to another in the Havemakker GitHub project (LetUsDoIT-Org, project 2). Use when user says "sprint cleanup", "sprint rollover", "move uncompleted issues to next sprint", "clean up previous sprint", or wants to roll over any sprint to another. Skips items with Status=Done or closed issues. Prefers a subagent (main thread confirms the plan, subagent runs the gh calls), and runs inline when agent dispatch is unavailable.
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # GitHub Sprint Cleanup — LetUsDoIT (Havemakker)
