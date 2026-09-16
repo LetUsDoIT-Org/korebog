@@ -8,6 +8,8 @@ model: sonnet
 
 **Announce:** "I'm using the create-issue skill to create a GitHub issue."
 
+**Read [github-mechanics.md](github-mechanics.md) in this folder first.** The duplicate check, command hygiene, project-item handling, batching, re-parenting and the subagent fallback are defined there, identically for every org that uses this skill. This file holds only LetUsDoIT's configuration and routing.
+
 ## Prefer a subagent — and degrade gracefully if there isn't one
 
 **Run this via a subagent when agent dispatch is available.** If it is not — some sessions carry an explicit "do not call the Agent tool unless the user requested it" instruction — **run the steps inline in the main thread instead, and say in one line that you are doing so.** That is a supported path, not a violation: the preference below is context hygiene, not correctness, and the inline route has produced correct issues in five separate sessions.
@@ -19,7 +21,7 @@ Note that invoking this skill by name (`/create-issue`) reasonably counts as the
 When this skill is invoked:
 
 1. **Confirm the draft with the user in the main thread** (title, type, priority, repo, body). The subagent will not have the full conversation context, so alignment must happen here.
-2. **Dispatch a subagent** (`Agent` tool, `general-purpose` type) with a self-contained prompt that includes: the confirmed title(s), body content (or instruction to write to a unique per-issue temp file `tmp/issue-body-<slug>.md`), type, priority label, repo, any sub-issue parent, and a pointer to this SKILL.md for the step-by-step procedure.
+2. **Dispatch a subagent** (`Agent` tool, `general-purpose` type) with a self-contained prompt that includes: the confirmed title(s), body content (or instruction to write to a unique per-issue temp file `tmp/issue-body-<slug>.md`), type, priority label, repo, any sub-issue parent, and pointers to this SKILL.md and github-mechanics.md for the step-by-step procedure.
 3. **The subagent runs all `gh` calls and reports back** the issue number, URL, and confirmation that type + project + sprint were set.
 4. **Relay the subagent's report** to the user in a compact form (issue numbers + URLs).
 
@@ -81,6 +83,10 @@ Infer from the issue topic; ask only if genuinely ambiguous between two areas. D
 new `area:*` values — if nothing fits, use the closest and flag it to the user.
 
 ## Workflow
+
+### 0. Duplicate check
+
+Run github-mechanics.md §1 for every drafted issue, before creating anything (`--state all`, keyword `--search`, hits shown to the user first).
 
 ### 1. Gather Information
 
@@ -239,13 +245,6 @@ Area: <area:*>
 Repository: LetUsDoIT-Org/<repo>
 Assigned: @me
 Project: Havemakker
-```
-
-## Duplicate Check
-
-Before creating, check for existing similar issues:
-```bash
-gh issue list --repo LetUsDoIT-Org/<repo> --search "<keywords>" --state open --limit 10
 ```
 
 ## Red Flags

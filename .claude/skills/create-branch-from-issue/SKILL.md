@@ -1,174 +1,115 @@
 ---
 name: create-branch-from-issue
-description: Create a properly named branch from dev for a GitHub issue. Handles branch naming, upstream tracking, and PR creation. Use when user says "create branch", "start work on issue", or provides an issue number to work on.
+description: Create a properly named work branch for a GitHub issue, off the repo's integration branch. Handles naming, related-issue discovery, commits and the hand-over to create-pr. Use when user says "create branch", "start work on issue", or provides an issue number to work on.
 model: sonnet
 ---
 
 # Create Branch From Issue
 
-Create a branch for a GitHub issue following consistent naming conventions.
-
 **Announce:** "I'm using the create-branch-from-issue skill to create a branch for this issue."
 
-## Auto-Detection
+This skill is shared, byte-identical, by every org that syncs it. Nothing in it may name an org, a repo or a project — anything org-specific belongs in that repo's `CLAUDE.md`.
+
+## Command hygiene
+
+One command per Bash call — no pipes, `&&`, `;`, `sed`, `$( )` captures or heredocs; the bash guard blocks them. `git fetch` is allowed. Pushing is the user's: hand over the command, with the **main checkout** path.
+
+## Step 1: Identify repo and integration branch
 
 ```bash
-REMOTE=$(git remote get-url origin)
-ORG=$(echo "$REMOTE" | sed -E 's/.*[:/]([^/]+)\/[^/]+(\.git)?$/\1/')
-REPO=$(echo "$REMOTE" | sed -E 's/.*[:/][^/]+\/([^/]+)(\.git)?$/\1/')
+gh repo view --json nameWithOwner,defaultBranchRef
+```
+```bash
+gh api "repos/<owner/repo>/branches/dev" --jq .name
 ```
 
-## Branch Naming
+The integration branch is `dev` if that returns a name (and the repo's `CLAUDE.md` does not say otherwise), else the default branch. Some repos have no `dev` and take PRs straight into `main`.
 
-Format: `{type}/{issue-number}-{slug-from-title}`
+```bash
+git fetch origin <integration>
+```
 
-| Issue Type | Branch Prefix |
-|-----------|--------------|
-| Feature | `feature/` |
+Branch from `origin/<integration>` directly. Your local copy of that branch does not need to be current, so there is nothing to pull first.
+
+## Step 2: Look up the issue
+
+```bash
+gh issue view <number> --repo <owner/repo> --json title,body,issueType,state,labels
+```
+
+**Not found?** Issues often live in a different repo of the same org than the code. List the org's repos and try the likely ones:
+
+```bash
+gh repo list <owner> --limit 50 --json name
+```
+
+Issues and PRs share one number space per repo, so finding a PR under that number means the issue is elsewhere. Don't give up after one repo.
+
+## Step 3: Surface related open issues (informational)
+
+If the issue carries a surface or area label — any label family sharing a prefix such as `area:` — list the other open issues with that same label so related work can be bundled:
+
+```bash
+gh issue list --repo <owner/repo> --state open --label "<that label>" --json number,title,labels --limit 30
+```
+
+Present them compactly (priority first if the repo has priority labels). **Don't add them to the branch automatically**; the user decides. Skip this step when the repo has no such label family.
+
+## Step 4: Create the branch
+
+Name: `{type}/{issue-number}-{slug}`, lowercase, hyphens, no special characters, slug at most 50 characters.
+
+| Issue type | Prefix |
+|---|---|
+| Feature, Story | `feature/` |
 | Bug | `bug/` |
 | Task | `task/` |
-| Story | `feature/` |
 
-**Slug rules:** lowercase, hyphens for spaces, remove special chars, max 50 chars.
-
-## Workflow
-
-### 1. Fetch Latest Dev and Verify Sync
+**If the checkout may be shared** (another session, a dev server, an editor), don't switch its branch. Use a worktree:
 
 ```bash
-git fetch origin dev
+git -C <repo> worktree add <path> -b <branch> origin/<integration>
 ```
 
-Then verify local dev matches remote dev:
+Otherwise, with a clean `git status --short`:
 
 ```bash
-LOCAL_DEV=$(git rev-parse dev)
-REMOTE_DEV=$(git rev-parse origin/dev)
+git checkout -b <branch> origin/<integration>
 ```
 
-- If `$LOCAL_DEV == $REMOTE_DEV` → local dev is up to date, proceed to step 2.
-- If they differ → ask user: `Your local dev is behind origin/dev. Please run: git pull origin dev` — wait for confirmation, then re-verify.
-
-### 2. Look Up Issue
-
-```bash
-gh issue view {number} --repo "$ORG/$REPO" --json title,body,issueType,state,labels
-```
-
-**If not found**, check other repos in the same org. Issues may live in a different repo than the code:
-```bash
-# List org repos and try each
-gh repo list "$ORG" --limit 20 --json name
-```
-
-**Common pattern:** PRs and issues share the number space per repo. If you find a PR instead of an issue, check other repos.
-
-### 2b. Surface Sibling Issues by Area
-
-Read the issue's `area:*` label (Havemakker repos carry exactly one). If present, list the other
-open issues on the **same surface** so related work can be batched into this branch:
-
-```bash
-gh issue list --repo "$ORG/$REPO" --state open --label "<area:*>" --json number,title,labels --limit 30
-```
-
-Parse the JSON from the result (do **not** use `--jq '... | ...'` — the global bash hook blocks
-`|` even inside jq strings). Present the siblings compactly, sorted by priority label, e.g.:
+Then hand over the push, as a bare line:
 
 ```
-You're starting #215 (area:chat). Other open chat issues you might fold in:
-  P1  #228 Give AI plant chat access to user's plant photos
-  P1  #140 AI summary and Q&A over logbook notes
-  P2  #301 Allow using chat before care info has loaded
+git -C <main checkout path> push -u origin <branch>
 ```
 
-This is **informational** — don't auto-add them to the branch. Just make the user aware so they
-can decide whether to bundle. If the issue has no `area:*` label, skip this step (and mention the
-label is missing — `create-issue` should have set it).
-
-### 3. Create Branch
-
-```bash
-git checkout -b {type}/{issue-number}-{slug} origin/dev
-```
-
-Ask user to set upstream:
-```
-Please run: git push -u origin {type}/{issue-number}-{slug}
-```
-
-### 4. Report Success
+## Step 5: Report
 
 ```
 Branch created:
-- Branch: {branch-name}
-- Based on: origin/dev
-- Issue: #{number} — {title}
-
-Ready to start development!
-When done, ask me to create a PR.
+- Branch: <branch>
+- Based on: origin/<integration>
+- Issue: #<number> — <title>
 ```
 
-## Creating PR (When User Asks Later)
+## Committing (you commit, the user pushes)
 
-After user has committed and pushed:
+- Run `git branch --show-current` right before every commit. In a shared checkout a parallel session can switch the branch mid-session, and the commit then lands on the wrong branch without any warning.
+- Stage **explicit paths**. `git commit -a` skips new files, and `git add -A` sweeps in whatever an installer or another session dropped in the tree.
+- Message: `feat:` / `fix:` / `chore:` prefix, referencing `#<number>`. For a multi-line message, Write it to `tmp/commit-msg-<slug>.txt` and run `git commit -F <that file>`. For one line, `-m` is fine; put code identifiers in 'single quotes', because backticks inside a double-quoted `-m` are executed by the shell and silently blank the text.
 
-```bash
-gh pr create \
-  --repo "$ORG/$REPO" \
-  --title "#{issue-number}: {issue-title}" \
-  --head {branch-name} \
-  --base dev \
-  --draft \
-  --body "Resolves #{issue-number}
-
-{issue-description}
-
-## Changes
-- [ ] TODO
-
-## Testing
-- [ ] TODO"
-```
-
-## Commit Workflow
-
-When implementation is complete, **you create the commit** (don't tell user to commit):
-
-```bash
-git add <files>
-git commit -m "$(cat <<'EOF'
-feat: implement feature description
-
-Implements #123
-EOF
-)"
-```
-
-Prefixes: `feat:`, `fix:`, `chore:` — include `Implements #123` or `Fixes #123`.
-
-Then ask user to push: `git push`
-
-## Cross-Repository Issues
-
-When an issue lives in a different repo than the code:
-- Branch is created in the code repo (where you're working)
-- PR references the issue with full path: `{org}/{other-repo}#123`
-- Use `Resolves {org}/{other-repo}#123` in PR body
+When the work is ready, use the **create-pr** skill. It covers closing keywords, which only work on a PR into the default branch.
 
 ## Red Flags
 
 **Never:**
-- Create branch without fetching dev first
-- Skip verifying local dev matches remote dev
-- Create PR to main (always dev)
-- Tell user to commit — YOU create the commit
-- Give up after checking only one repo for the issue
+- Switch branches in a checkout another session may be using
+- Branch from a local ref you have not just fetched
+- Target a PR at a branch without checking which branch the repo integrates into
+- Tell the user to commit — you commit; the user pushes
+- Stop searching after one repo when the issue is not found
 
 **Always:**
-- Surface sibling issues sharing the issue's `area:*` label before creating the branch
-- Fetch dev and verify local matches remote before creating branch
-- Use `{type}/{number}-{slug}` format
-- Create branch from `origin/dev`
-- Ask user to push with `-u` flag after branch creation
-- Create draft PRs targeting dev
+- Use `{type}/{number}-{slug}`
+- Branch from `origin/<integration>`
+- Confirm the current branch immediately before each commit
