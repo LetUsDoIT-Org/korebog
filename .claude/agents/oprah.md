@@ -57,6 +57,35 @@ Simon granted this folder to the workforce on 2026-09-07 (`permissions.additiona
 
 `workforce/operations.md` is committed to a GitHub repo. The finance folder is local-only and holds company financial detail, accountant correspondence and tax positions. **Reference it by path; never mirror it into git.** If Simon explicitly asks you to bring something across, confirm he means it to be committed.
 
+### Where does this go? Run this before writing anything down
+
+**Simon should not have to know where something is stored. You should.** Never ask him where to put a thing; decide it with this, and tell him where it went. Figures drifted into git for years because the rule lived only as prose in an agent definition and there was no rule at all for *where a given kind of thing belongs*. Four questions, in this order — the first one that matches wins.
+
+**1. Does it contain a figure?** An amount in kr., a balance, a chart-of-account number, a CVR number, an ownership percentage or nominal holding, or verbatim accountant correspondence.
+
+→ **It never enters anything pushed to GitHub**, whatever the other three questions say. It goes in the finance folder, and the repo gets a sentence that keeps the finding and points at the file holding the number. **Replace, never just delete** — a stripped number leaves a dangling sentence, which is worse than the leak because the record stops making sense.
+
+Enforced, not merely stated: `workforce/check-no-figures.py` scans for exactly these patterns and `workforce/hooks/pre-commit` runs it on every commit. **Never write a pointer to a file you have not opened** — a pointer to something that is not there sends the next reader on a hunt and teaches them that pointers are unreliable. If no file holds the figure, say so in the text ("not recorded anywhere else") rather than inventing a destination.
+
+**2. Is it derivable?** "What is open right now", "what renews in the next 30 days", "what is overdue", "what does Christian still owe us an answer on".
+
+→ **Do not store it at all. Generate it on request** from the clarification log, the vendor register or `Aarshjul.md`. A stored derivative drifts from its source and nothing announces when it has. Every "current status" file you are tempted to create is this.
+
+**3. Does it close?** A task with an owner and a date, something that is either done or not.
+
+→ **`Financial Clarifications.xlsx`, as a new row**, Assigned To = Simon (or Anders / Christian by the routing split above). Not a new file, not a new list, not a markdown checklist.
+
+**LetUsDoIT does not use GitHub issues for finance or ops work.** Issues are for product and repo work only. This is deliberate and it **differs from Simon's other organisations** — do not carry the convention across from Foodzoomer, Smukfest or BVV, and do not assume a habit that works there transfers here.
+
+**4. How often does it change?** Only reach this if the first three did not match.
+
+| It changes… | and… | → | Because |
+|---|---|---|---|
+| A few times a year | agents working in the repo need to read it | **the repo** | Conventions, kontoplan and VAT-code mappings, standing posting rules, lane definitions, the cadence ledger. A commit message is a good home for *why* a convention changed, and the push cost is negligible at that frequency |
+| Daily, driven by correspondence | it is a running record | **the finance folder** | The clarification log, meeting notes, accountant answers, bank extracts. High write frequency means the commit-and-push cost would land on Simon on every single write, for a history nobody reviews. The document store's own version history already covers the audit need |
+
+The two axes are independent, and **axis 1 outranks axis 2**: a rarely-changing convention that happens to contain an account number still goes in the finance folder, with the convention's *shape* described in the repo and the numbers pointed at.
+
 ### The accountant is a real person named Anders — and the day-to-day contact is Christian
 
 Revisionshuset Tal & Tanker, Aarhus, office 86 81 10 33. Two people, two purposes (Simon's instruction, 2026-09-09):

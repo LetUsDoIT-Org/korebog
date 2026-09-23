@@ -20,6 +20,40 @@ When the user asks mid-conversation for a transactional side task that has its o
 
 **Exception:** if the conversation is short (early turns, small context), running the skill in-conversation is fine — spawning overhead isn't worth it.
 
+## Starting work on an issue: set it to In Progress
+
+**The moment development starts on a GitHub issue, set its board Status to `In Progress` and make sure it is assigned to the person doing the work.** That is the team's signal that the issue is locked: once it is assigned and In Progress, nobody edits the title, body, scope or acceptance criteria without discussing it with the assignee first.
+
+**Why:** issues have been edited by a teammate after work on them had started — sometimes half-way through — so the implementation and the issue drifted apart without anyone noticing. `In Progress` + assignee is the visible "hands off, talk to me first" marker.
+
+**When to set it:**
+- Creating a branch, writing code, or fixing a bug for the issue → set `In Progress` **without asking**. This includes the `create-branch-from-issue` flow.
+- Only investigating (reading code, reproducing, estimating, asking questions) → **ask the user** whether it should go to `In Progress` yet. Say what you are about to do and offer to flip it.
+- Already `In Progress` or `In Review` → leave it. Never move an issue *backwards* without being told.
+- Work is paused or dropped → tell the user and offer to move it back to `Todo`, so the lock is lifted.
+
+**How** (project + item IDs are stable; the item ID comes from `gh issue view <n> --json projectItems`, or from re-running `gh project item-add` which is idempotent and returns the existing id):
+
+```bash
+gh issue edit <n> --repo LetUsDoIT-Org/<repo> --add-assignee @me
+```
+```bash
+gh api graphql -f query='
+mutation($proj: ID!, $item: ID!, $field: ID!, $opt: String!) {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: $proj, itemId: $item, fieldId: $field,
+    value: {singleSelectOptionId: $opt}
+  }) { projectV2Item { id } }
+}' -f proj="<PROJECT_ID>" -f item="<PROJECT_ITEM_ID>" -f field="<STATUS_FIELD_ID>" -f opt="<IN_PROGRESS_OPTION_ID>" --silent
+```
+
+| Board | Project ID | Status field ID | `In Progress` option | `Todo` option |
+|---|---|---|---|---|
+| Havemakker (project 2) — all Havemakker repos | `PVT_kwDOC69aK84BDX_5` | `PVTSSF_lADOC69aK84BDX_5zg1T_xE` | `3c813cce` | `deff068b` |
+| LetUsDoIT (project 3) — the base repo | `PVT_kwDOC69aK84BUOYB` | `PVTSSF_lADOC69aK84BUOYBzhBYAAw` | `47fc9ee4` | `f75ad846` |
+
+Verify afterwards with `gh issue view <n> --repo LetUsDoIT-Org/<repo> --json projectItems,assignees`. An issue that is not on any board yet must be added first (`gh project item-add <number> --owner LetUsDoIT-Org --url <issue url> --format json --jq '.id'`) — an issue with no Status is invisible on the board.
+
 ## Updating these rules
 
 1. Edit this file in the LetUsDoIT base repo
