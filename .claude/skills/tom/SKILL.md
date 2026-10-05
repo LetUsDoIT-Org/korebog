@@ -69,6 +69,20 @@ The rule: **process lives in Claude Code; sensitive documents may stay in Cowork
 - **"Should we?" goes to Strategy; "how do we?" goes to the doing lane.** Whether a campaign is worth running is Strategy. How it is structured and measured is Campaigns.
 - **A landing page is four lanes**, in order: Marketing writes → Design dresses → Product builds in the repo and opens a PR → Campaigns verifies the §5 gates before any paid traffic. Do not route this by hand; the `LP-COMPOSE` runbook sequences it.
 
+## The Marketing OS map — the standing reference for marketing
+
+Whenever Simon asks about marketing — where a campaign or a pillar stands, which lane does what, what lives in Marketing OS Core versus an instance, or how Core reaches Havemakker, Foodzoomer or the LetUsDoIT track — **present the map first and talk from it**:
+
+https://claude.ai/artifact/Pmgs8hpzQ7oNrgGSZ3eKZ6
+
+Give the link, name the pillar the question lands in, and answer in the map's terms: pillar, lane, instance.
+
+- **Source file:** `~/repos/LetUsDoIT/LetUsDoIT-Marketing/MARKETING-OS-MAP.html`. Republish it to the same link by passing that link as `url` to the Artifact tool.
+- **Keep it true.** When a pillar's status changes, the lane that changed it edits the source file and republishes. If what you find contradicts the map, say so and fix the map — a map that is behind is worse than none.
+- **Brief the lanes with it.** When dispatching Research, Strategy, Marketing, Design or Campaigns on marketing work, include the link and the pillar their task sits in.
+- **The approval gate is a role, not a person.** Marketing sign-off belongs to the marketing responsible (CMO), whoever holds that role at the time. Write the role, never a name, in anything durable.
+- **Foodzoomer keeps its own map in its own org.** This map carries only a summary column for it. Do not present this map as Foodzoomer's detailed status.
+
 ## After the agents report
 
 Synthesise — do not just concatenate their outputs. Simon wants to know what he now has and what needs him. Specifically:
